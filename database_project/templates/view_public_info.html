@@ -1,0 +1,62 @@
+<html>
+<head>
+</head>
+<body>
+<form action="/search_upcoming_flights" method="POST">
+	Source City:
+	<input type="text" name = "source_city" placeholder="source_city"> </br>
+	Source Airport:
+	<input type="text" name = "source_airport" placeholder="source_airport"></br>
+	Destination City:
+	<input type="text" name = "destination_city" placeholder="destination_city"></br>
+	Destination Airport:
+	<input type="text" name = "destination_airport" placeholder="destination_airport"></br>
+	Date:
+	<input type="date" name = "date" required></br>
+	<input type="submit" value ="search flight" />
+</form>
+
+<form action="/check_flight_status" method="POST">
+	Flight Number: 
+	<input type="number" name="flight_num" min="0" max="999999999999" required></br>
+	Departure Date:
+	<input type="date" name="departure_date"></br>
+	Arrival Date:
+	<input type="date" name="arrival_date"></br>
+	<input type="submit" value="check flight status" />
+</form>
+
+<table>
+	<th>Airline Name</th>
+	<th>Flight Number</th>
+	<th>Department Airport</th>
+	<th>Department Time</th>
+	<th>Arrival Airport</th>
+	<th>Arrival Time</th>
+	<th>Price</th>
+	<th>Status</th>
+	<th>Airplane ID</th>
+{% for line in results %}
+	<tr>
+	    <td>{{line['airline_name']}}</td>
+	    <td>{{line['flight_num']}}</td>
+	    <td>{{line['departure_airport']}}</td>
+	    <td>{{line['departure_time']}}</td>
+	    <td>{{line['arrival_airport']}}</td>
+	    <td>{{line['arrival_time']}}</td>
+	    <td>{{line['price']}}</td>
+	    <td>{{line['status']}}</td>
+	    <td>{{line['airplane_id']</td>
+	</tr>
+{% endfor %}
+</table>
+
+
+
+{% if error %}
+	<p class="error"><strong>Error:</strong> {{error}}</p>
+{% endif %}
+
+<a href="/">Go back</a>
+</body>
+</html>

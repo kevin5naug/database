@@ -1,0 +1,22 @@
+1. 
+{city_name, state}, {city_name, state, mayor} are super keys.
+{city_name, state} is a candidate key.
+
+2. 
+1000 rows.
+
+3.
+city_name -> city_name is a trivial functional dependency.
+
+4.
+city_name, state -> mayor
+
+5.
+state -> governor
+
+6.
+state_info(state, governor)
+city_info(city, state, mayor)
+
+7.
+Only 1 row.

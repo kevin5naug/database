@@ -1,0 +1,82 @@
+Name: Yixing Guan  Partner:Yiyun Fan
+Problem 1:
+1. 
+select ID from student natural join takes where course_id='CS-101' and grade='A' and ID in (select ID from student natural join takes where course_id='CS-319' and grade='A');
+
+2. 
+select ID, name from student natural join takes where course_id='CS-101' and grade='A' and ID in (select ID from student natural join takes where course_id='CS-319' and grade='A');
+
+3. 
+select ID, name from student natural join takes where course_id='CS-101' and grade<>'A' and ID in (select ID from student natural join takes where course_id='CS-319' and grade='A');
+
+4. 
+select ID, name from student natural join takes where course_id='CS-319' and grade='A' and ID not in (select ID from student natural join takes where course_id='CS-101' and grade='A');
+
+5. 
+select distinct ID from student natural join takes where (select count(*) from takes as T where takes.course_id=T.course_id and takes.ID=T.ID)>1;
+
+6. 
+create table gradepoint(letter varchar(2), points numeric(6,4));
+insert into gradepoint values('A', 4.0), ('A-', 3.67), ('B+', 3.33), ('B', 3.0), ('B-', 2.67), ('C+', 2.33), ('C', 2.0), ('C-', 1.67), ('D+', 1.33), ('D', 1.0), ('D-', 0.67), ('F', 0.0);
+select G.ID, G.gpvalue/C.cvalue from (select S.ID as ID, sum(G.points*C.credits) as gpvalue from student as S, takes as T, course as C, gradepoint as G where S.ID=T.ID and T.course_id=C.course_id and T.grade=G.letter group by S.ID) as G, (select S.ID as ID, sum(C.credits) as cvalue from student as S, takes as T, course as C where S.ID=T.ID and T.course_id=C.course_id group by S.ID) as C where G.ID=C.ID;
+
+7. 
+The constraint is: foreign key (grade) references gradepoint(letter);
+It belongs to the takes table.
+
+8.
+create view gp_total as (select S.ID as ID, sum(G.points*C.credits) as gpvalue from student as S, takes as T, course as C, gradepoint as G where S.ID=T.ID and T.course_id=C.course_id and T.grade=G.letter group by S.ID);
+create view c_total as (select S.ID as ID, sum(C.credits) as cvalue from student as S, takes as T, course as C where S.ID=T.ID and T.course_id=C.course_id group by S.ID);
+create view student_gpa as (select S.ID as ID, S.name as name, G.gpvalue/C.cvalue as gpa from student as S, gp_total as G, c_total as C where G.ID=S.ID and S.ID=C.ID);
+create view deanslist as (select * from student_gpa where gpa>=3.0);
+
+9.
+select S.dept_name, count(*) as deanslist_student_num from deanslist as D, student as S where D.ID=S.ID group by S.dept_name;
+
+10.
+Comment: plase see problem 8 for the definition of view "student_gpa" used in the following query
+select G.ID, G.name from student_gpa as G, student as S where G.ID=S.ID and G.gpa>=all(select sg.gpa from student_gpa as sg, student as st where sg.ID=st.ID and st.dept_name='Comp. Sci.');
+
+11.
+create view takes_gradepoint as (select ID, course_id, sec_id, semester, year, points as gp from takes, gradepoint where takes.grade=gradepoint.letter);
+select distinct T.ID from takes_gradepoint as T where T.course_id='CS-101' and T.gp>(select tg.gp from takes_gradepoint as tg where tg.ID=T.ID and tg.course_id='CS-347');
+
+12.
+Comment: please see problem 11 for the definition of view "takes_gradepoint" used in the following query
+select L.ID from (select ID, min(gp) as lowerbound from takes_gradepoint group by ID) as L where L.lowerbound>=3.67;
+
+13.
+select distinct S.course_id from section as S where S.course_id in (select se.course_id from section as se where se.course_id=S.course_id and se.year=S.year+1 );
+
+14.
+select * from instructor as I where not exists (select course_id from course where dept_name="Comp. Sci." and course_id not in (select T.course_id from teaches as T where I.ID=T.ID));
+
+15.
+select S.ID, S.name from student as S where not exists (select distinct semester, year from takes as T where T.ID=S.ID and (semester, year) not in (select distinct semester, year from takes as ta where ta.ID=S.ID and ta.course_id like 'CS%'));
+
+16.
+select distinct course_id, ID from course natural left outer join teaches;
+
+Problem 2:
+1.
+The instructor, teaches and advisor tables will change.
+One tuple will be deleted in the instructor table.
+All tuples that references the deleted instructor in the teaches table will be deleted due to the cascade constraint in the table definition.
+All tuples that references the deleted instructor in the advisor table will have their attributes "i_ID" set to null due to the "on delete set null" constraint in the table definition.
+All other tables will remain the same, for they have no foreign keys that reference the instructor, teaches and advisor tables.
+
+2.
+The instructor, teaches and advisor tables will change.
+One tuple will be deleted in the instructor table.
+All tuples that references that deleted instructor in the teaches table will be deleted due to the cascade constraint in the table definition.
+All tuples that references the deleged instructor in the advisor table will be deleted due to the modified cascade constraint in the table definition.
+All other tables will remain the same, for they have no foreign keys that reference the instructor, teaches and advisor tables.
+
+3.
+Add the following constraint to the definition of the takes table:
+foreign key (course_id, sec_id, semester, year) references teaches(course_id, sec_id, semester, year);
+Note that the instructor ID is a part of the primary key in the teaches table by definition, hence is not null.
+
+4.
+insert into section values('BIO-101', '2', 'Summer', 2009, 'Watson', '3128', 'A');
+Note that while 'Waton' is a valid building name and '3128' is a valid room-number, ('Watson', '3128') is not a tuple that exists in the classroom table. 
