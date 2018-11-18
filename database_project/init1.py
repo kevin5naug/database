@@ -29,9 +29,9 @@ def login():
     return render_template('login_agent.html')
 
 #Define route for login
-@app.route('/login_register')
+@app.route('/login_staff')
 def login():
-    return render_template('login_register.html')
+    return render_template('login_staff.html')
 
 #Define route for register
 @app.route('/register')
@@ -59,11 +59,12 @@ def loginAuthCustomer():
 	#creates a session for the the user
 	#session is a built in
 	session['email'] = email
-	return redirect(url_for('home'))
+	return redirect(url_for('customer_home'))
     else:
 	#returns an error message to the html page
 	error = 'Invalid login or username'
 	return render_template('login_customer.html', error=error)
+
 #Authenticates the login
 @app.route('/loginAuthAgent', methods=['GET', 'POST'])
 def loginAuthAgent():
@@ -85,12 +86,13 @@ def loginAuthAgent():
 	#creates a session for the the user
 	#session is a built in
 	session['email'] = email
-	return redirect(url_for('home'))
+	return redirect(url_for('booking_agent_home'))
     else:
 	#returns an error message to the html page
 	error = 'Invalid login or username'
 	return render_template('login_agent.html', error=error)
     #Authenticates the login
+
 @app.route('/loginAuthStaff', methods=['GET', 'POST'])
 def loginAuthStaff():
     #grabs information from the forms
@@ -111,7 +113,7 @@ def loginAuthStaff():
 	#creates a session for the the user
 	#session is a built in
 	session['username'] = username
-	return redirect(url_for('home'))
+	return redirect(url_for('airline_staff_home'))
     else:
 	#returns an error message to the html page
 	error = 'Invalid login or username'
@@ -152,7 +154,7 @@ def registerAuth():
         cursor.execute(ins, (email, name, password, building_number, street, city, state, phone_number, passport_number, passport_expiration, passport_country, date_of_birth))
         conn.commit()
         cursor.close()
-        return render_template('index.html')
+        return render_template('front_page.html')
 
 #Authenticates Booking Agent Registration
 @app.route('/registerBookingAgent', methods=['GET', 'POST'])
@@ -180,7 +182,7 @@ def registerAuth():
         cursor.execute(ins, (email, password, booking_agent_id))
         conn.commit()
         cursor.close()
-        return render_template('index.html')
+        return render_template('front_page.html')
 
 #Authenticates Airline Staff Registration
 @app.route('/registerAirlineStaff', methods=['GET', 'POST'])
@@ -211,10 +213,10 @@ def registerAuth():
         cursor.execute(ins, (email, password, first_name, last_name, date_of_birth, airline_name))
         conn.commit()
         cursor.close()
-        return render_template('index.html')
-@app.route('/home')
-def home():
-    
+        return render_template('front_page.html')
+
+@app.route('/customer_home')
+def customer_home():
     username = session['username']
     cursor = conn.cursor();
     query = 'SELECT ts, blog_post FROM blog WHERE username = %s ORDER BY ts DESC'
@@ -224,19 +226,7 @@ def home():
         print(each['blog_post'])
     cursor.close()
     return render_template('home.html', username=username, posts=data1)
-
 	
-@app.route('/post', methods=['GET', 'POST'])
-def post():
-    username = session['username']
-    cursor = conn.cursor();
-    blog = request.form['blog']
-    query = 'INSERT INTO blog (blog_post, username) VALUES(%s, %s)'
-    cursor.execute(query, (blog, username))
-    conn.commit()
-    cursor.close()
-    return redirect(url_for('home'))
-
 @app.route('/logout')
 def logout():
     session.pop('username')
