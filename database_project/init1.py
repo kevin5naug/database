@@ -16,12 +16,22 @@ conn = pymysql.connect(host='192.168.64.2',
 #Define a route to hello function
 @app.route('/')
 def hello():
-    return render_template('index.html')
+    return render_template('front_page.html')
+
+#Define route for customer login
+@app.route('/login_customer')
+def login():
+    return render_template('login_customer.html')
+
+#Define route for booking agent login
+@app.route('/login_agent')
+def login():
+    return render_template('login_agent.html')
 
 #Define route for login
-@app.route('/login')
+@app.route('/login_register')
 def login():
-    return render_template('login.html')
+    return render_template('login_register.html')
 
 #Define route for register
 @app.route('/register')
