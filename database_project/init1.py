@@ -34,30 +34,30 @@ def view_public_info():
 
 @app.route('/check_flight_status', methods=['GET', 'POST'])
 def check_flight_status():
-    flight_num=request.form['flight_num'] #required input
-    departure_date=request.form['departure_date']
-    arrival_date=request.form['arrival_date']
+    flight_num=request.form['flight_num']
+    date=request.form['date'] #required input
 
     cursor=conn.cursor()
-    if((!departure_date) and (!arrival_date)):
-        query='select * from flight as F where F.flight_num=%s and date(F.departure_time)=%s and date(F.arrival_time)=%s'
-        cursor.execute(query, (flight_num, departure_date, arrival_date))
-    elif(!departure_date):
-        query='select * from flight as F where F.flight_num=%s and date(F.departure_time)=%s'
-        cursor.execute(query, (flight_num, departure_date))
-    elif(!arrival_date):  
-        query='select * from flight as F where F.flight_num=%s and date(F.arrival_time)=%s'
-        cursor.execute(query, (flight_num, arrival_date))
+    if(flight_num):
+        query='''select * 
+        from flight as F 
+        where F.flight_num=%s 
+        and ((date(F.arrival_time)=%s)
+        or (date(F.departure_time)=%s))'''
+        cursor.execute(query, (flight_num, date, date))
     else:
-        query='select * from flight as F where F.flight_num=%s'
-        cursor.execute(query, (flight_num,))
+        query='''select * 
+        from flight as F 
+        where (date(F.arrival_time)=%s)
+        or (date(F.departure_time)=%s)'''
+        cursor.execute(query, (date, date))
     data=cursor.fetchall()
     cursor.close()
     error=None
     if(data):
         return render_template('view_public_info.html', error=error, results=data)
     else:
-        error = 'No flights found  satisfying your search constraints. Please make sure you input the right flight information: flight_number: '+str(flight_number)+' departure_date '+departure_date+' arrival_date: '+arrival_date
+        error = 'No flights found  satisfying your search constraints. Please make sure you input the right flight information: flight_number: '+str(flight_number)+' date: '+str(date)
         return render_template('view_public_info.html', error=error, results=data)
 
 @app.route('/search_upcoming_flights', methods=['GET', 'POST'])
