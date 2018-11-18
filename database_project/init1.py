@@ -215,24 +215,25 @@ def registerAuth():
         cursor.close()
         return render_template('front_page.html')
 
-@app.route('/customer_home')
-def customer_home():
-    username = session['username']
-    cursor = conn.cursor();
-    query = 'SELECT ts, blog_post FROM blog WHERE username = %s ORDER BY ts DESC'
-    cursor.execute(query, (username))
-    data1 = cursor.fetchall() 
-    for each in data1:
-        print(each['blog_post'])
-    cursor.close()
-    return render_template('home.html', username=username, posts=data1)
+@app.route('/airline_staff_home')
+def airline_staff_home():
+    username=session['username']
+    first_name, last_name, airline_name=get_airline_staff_info(username)
+    return render_template('airline_staff_home.html', username=username, flight_info=data)
 	
-@app.route('/logout')
+@app.route('/logout_staff')
 def logout():
     session.pop('username')
     return redirect('/')
-	
+
 app.secret_key = 'some key that you will never guess'
+
+def get_airline_staff_airline_name(username):
+    cursor=conn.cursor()
+    query='select * from airline_staff where username=%s'
+    cursor.execute(query, (username,))
+    data=cursor.fetchone
+
 #Run the app on localhost port 5000
 #debug = True -> you don't have to restart flask
 #for changes to go through, TURN OFF FOR PRODUCTION
