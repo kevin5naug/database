@@ -2,14 +2,68 @@
 <head>
 </head>
 <body>
-<form action="/registerAuth" method="POST">
-	<input type="text" name = "username" placeholder="username" required/> </br>
-	<input type="password" name = "password" placeholder="password" required/></br>
-	<input type="submit" value = Register />
-	{% if error %}
-		<p class="error"><strong>Error:</strong> {{error}}</p>
-	{% endif %}
+<h2>Customer Registration Form</h2>
+<form action='/registerCustomer' method="POST">
+	Email:
+	<input type='text' name='email' required/></br>
+	Name:
+	<input type='text' name='name' required/></br>
+	Password:
+	<input type='password' name='password' required/></br>
+	Building Number:
+	<input type='text' name='building_number' required/></br>
+	Street:
+	<input type='text' name='street'  required/></br>
+	City:
+	<input type='text' name='city'  required/></br>
+	State:
+	<input type='text' name='state'  required/></br>
+	Phone Number:
+	<input type='number' name='phone_number' required/></br>
+	Passport Number:
+	<input type='text' name='passport_number'  required/></br>
+	Passport Expiration Date:
+	<input type='date' name='passport_expiration' required/></br>
+	Passport Country:
+	<input type='text' name='passport_country' required/></br>
+	Date of Birth:
+	<input type='date' name='date_of_birth' required/></br>
+	<input type='submit' value='Register as Customer' /></br>
 </form>
+
+<h2>Booking Agent Registration Form</h2>
+<form action='/registerBookingAgent' method="POST">
+	Email:
+	<input type='text' name='email'  required/></br>
+	Password:
+	<input type='password' name='password' required/></br>
+	Booking Agent ID:
+	<input type='number' name='booking_agent_id' required/></br>
+	<input type='submit' value='Register as Booking Agent' /></br>
+</form>
+
+<h2>Airline Staff Registration Form</h2>
+<form action='/registerAirlineStaff' method="POST">
+	Username:
+	<input type='text' name='username'  required/></br>
+	Password:
+	<input type='password' name='password' required/></br>
+	First Name:
+	<input type='text' name='first_name'  required/></br>
+	Last Name:
+	<input type='text' name='last_name'  required/></br>
+	Date of Birth:
+	<input type='date' name='date_of_birth' required/></br>
+	Airline Name:
+	<input type='text' name='airline_name'  required/></br>
+	<input type='submit' value='Register as Airline Staff /'></br>
+</form>
+
+{% if error %}
+	<p class="error"><strong>Error:</strong> {{error}}</p>
+{% endif %}
+
+
 <a href="/">Go back</a>
 </body>
 </html>
