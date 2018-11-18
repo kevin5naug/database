@@ -2,12 +2,8 @@
 <head>
 </head>
 <body>
-<form action="/loginAuth" method="POST">
-	Please select the type of your account:
-		<select name="usertype">
-		    <option value="customer" selected>Customer</option>
-		    <option value="booking_agent">Booking Agent</option>
-		    <option value="airline_staff">Airline Staff</option>
+<form action="/loginAuthStaff" method="POST">
+		<h2>Enter Login Info</h2>
 	<input type="text" name = "username" placeholder="username" required/> </br>
 	<input type="password" name = "password" placeholder="password" required/></br>
 	<input type="submit" value = Login />
@@ -16,7 +12,7 @@
 	{% endif %}
 </form>
 
-<a href="/">Go back</a>
+<a href="front_page.html">Go back</a>
 
 </body>
 
