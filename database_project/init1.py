@@ -107,33 +107,101 @@ def loginAuthStaff():
 	error = 'Invalid login or username'
 	return render_template('login_staff.html', error=error)
 
-#Authenticates the register
-@app.route('/registerAuth', methods=['GET', 'POST'])
+#Authenticates Customer Registration
+@app.route('/registerCustomer', methods=['GET', 'POST'])
 def registerAuth():
     #grabs information from the forms
-    username = request.form['username']
-    password = request.form['password']
+    email=request.form['email']
+    name=request.form['name']
+    password=request.form['password']
+    building_number=request.form['building_number']
+    street=request.form['street']
+    city=request.form['city']
+    state=request.form['state']
+    phone_number=request.form['phone_number']
+    passport_number=request.form['passport_number']
+    passport_expiration=request.form['passport_expiration']
+    passport_country=request.form['passport_country']
+    date_of_birth=request.form['date_of_birth']
 
     #cursor used to send queries
     cursor = conn.cursor()
     #executes query
-    query = 'SELECT * FROM user WHERE username = %s'
-    cursor.execute(query, (username))
+    query = 'SELECT * FROM customer WHERE email = %s'
+    cursor.execute(query, (email,))
     #stores the results in a variable
     data = cursor.fetchone()
     #use fetchall() if you are expecting more than 1 data row
     error = None
     if(data):
-	#If the previous query returns data, then user exists
-	error = "This user already exists"
-	return render_template('register.html', error = error)
+        #If the previous query returns data, then user exists
+        error = "This email address has already been registered by a customer"
+        return render_template('register.html', error = error)
     else:
-	ins = 'INSERT INTO user VALUES(%s, %s)'
-	cursor.execute(ins, (username, password))
-	conn.commit()
-	cursor.close()
-	return render_template('index.html')
+        ins = 'INSERT INTO customer VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'
+        cursor.execute(ins, (email, name, password, building_number, street, city, state, phone_number, passport_number, passport_expiration, passport_country, date_of_birth))
+        conn.commit()
+        cursor.close()
+        return render_template('index.html')
 
+#Authenticates Booking Agent Registration
+@app.route('/registerBookingAgent', methods=['GET', 'POST'])
+def registerAuth():
+    #grabs information from the forms
+    email=request.form['email']
+    password=request.form['password']
+    booking_agent_id=request.form['booking_agent_id']
+
+    #cursor used to send queries
+    cursor = conn.cursor()
+    #executes query
+    query = 'SELECT * FROM booking_agent WHERE email = %s'
+    cursor.execute(query, (email,))
+    #stores the results in a variable
+    data = cursor.fetchone()
+    #use fetchall() if you are expecting more than 1 data row
+    error = None
+    if(data):
+        #If the previous query returns data, then user exists
+        error = "This email address has already been registered by a booking agent"
+        return render_template('register.html', error = error)
+    else:
+        ins = 'INSERT INTO booking_agent VALUES(%s, %s, %s)'
+        cursor.execute(ins, (email, password, booking_agent_id))
+        conn.commit()
+        cursor.close()
+        return render_template('index.html')
+
+#Authenticates Airline Staff Registration
+@app.route('/registerAirlineStaff', methods=['GET', 'POST'])
+def registerAuth():
+    #grabs information from the forms
+    email=request.form['username']
+    password=request.form['password']
+    first_name=request.form['first_name']
+    last_name=request.form['last_name']
+    date_of_birth=request.form['date_of_birth']
+    airline_name=request.form['airline_name']
+
+    #cursor used to send queries
+    cursor = conn.cursor()
+    #executes query
+    query = 'SELECT * FROM airline_staff WHERE username = %s'
+    cursor.execute(query, (email,))
+    #stores the results in a variable
+    data = cursor.fetchone()
+    #use fetchall() if you are expecting more than 1 data row
+    error = None
+    if(data):
+        #If the previous query returns data, then user exists
+        error = "This username has already been registered by an airline staff member"
+        return render_template('register.html', error = error)
+    else:
+        ins = 'INSERT INTO airline_staff VALUES(%s, %s, %s, %s, %s, %s)'
+        cursor.execute(ins, (email, password, first_name, last_name, date_of_birth, airline_name))
+        conn.commit()
+        cursor.close()
+        return render_template('index.html')
 @app.route('/home')
 def home():
     
