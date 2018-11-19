@@ -1,0 +1,64 @@
+<html>
+<head>
+</head>
+<body>
+<h1>Welcome Staff {{username}}</h1>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<form action="/staff_search_flights" method="POST">
+	Source City:
+	<input type="text" name = "source_city" placeholder="source_city"> </br>
+	Source Airport:
+	<input type="text" name = "source_airport" placeholder="source_airport"></br>
+	Destination City:
+	<input type="text" name = "destination_city" placeholder="destination_city"></br>
+	Destination Airport:
+	<input type="text" name = "destination_airport" placeholder="destination_airport"></br>
+	Start Date:
+	<input type="date" name = "start_date" required></br>
+	<input type="date" name = "end_date" required></br>
+	<input type="submit" value ="search flight" />
+</form>
+
+Requested Flight Information:
+<table>
+	<th>Airline Name</th>
+	<th>Flight Number</th>
+	<th>Department Airport</th>
+	<th>Department Time</th>
+	<th>Arrival Airport</th>
+	<th>Arrival Time</th>
+	<th>Price</th>
+	<th>Status</th>
+	<th>Airplane ID</th>
+{% for line in results %}
+	<tr>
+	    <td>{{line['airline_name']}}</td>
+	    <td>{{line['flight_num']}}</td>
+	    <td>{{line['departure_airport']}}</td>
+	    <td>{{line['departure_time']}}</td>
+	    <td>{{line['arrival_airport']}}</td>
+	    <td>{{line['arrival_time']}}</td>
+	    <td>{{line['price']}}</td>
+	    <td>{{line['status']}}</td>
+	    <td>{{line['airplane_id']</td>
+	</tr>
+{% endfor %}
+</table>
+
+{% if error %}
+	<p class="error"><strong>Error:</strong> {{error}}</p>
+{% endif %}
+
+<a href='/staff_customize_view'>View Flight Based on Custimized Criteria</a>
+<a href='/staff_customers_on_flight'>View Customers on a Flight</a>
+<a href="/staff_home">Go Back to Your Home Page</a>
+<a href="/staff_logout">Log Out Your Staff Account</a>
+</body>
+
+
+</html>

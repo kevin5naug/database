@@ -9,7 +9,7 @@ app = Flask(__name__)
 conn = pymysql.connect(host='192.168.64.2',
                        user='user',
                        password='',
-                       db='blog',
+                       db='air_ticket_reservation',
                        charset='utf8mb4',
                        cursorclass=pymysql.cursors.DictCursor)
 
@@ -37,6 +37,81 @@ def login():
 @app.route('/register')
 def register():
     return render_template('register.html')
+
+@app.route('/view_public_info')
+def view_public_info():
+    return render_template('view_public_info.html')
+
+@app.route('/check_flight_status', methods=['GET', 'POST'])
+def check_flight_status():
+    flight_num=request.form['flight_num']
+    date=request.form['date'] #required input
+    cursor=conn.cursor()
+    if(flight_num):
+        query='''select * 
+        from flight as F 
+        where F.flight_num=%s 
+        and ((date(F.arrival_time)=%s)
+        or (date(F.departure_time)=%s))'''
+        cursor.execute(query, (flight_num, date, date))
+    else:
+        query='''select * 
+        from flight as F 
+        where (date(F.arrival_time)=%s)
+        or (date(F.departure_time)=%s)'''
+        cursor.execute(query, (date, date))
+    data=cursor.fetchall()
+    cursor.close()
+    error=None
+    if(data):
+        return render_template('view_public_info.html', error=error, results=data)
+    else:
+        error = 'No flights found  satisfying your search constraints. Please make sure you input the right flight information: flight_number: '+str(flight_number)+' date: '+str(date)
+        return render_template('view_public_info.html', error=error, results=data)
+
+@app.route('/search_upcoming_flights', methods=['GET', 'POST'])
+def search_public_info():
+    #grabs information from the forms
+    source_city = request.form['source_city']
+    source_airport = request.form['source_airport']
+    destination_city = request.form['destination_city']
+    destination_airport = request.form['destination_airport']
+    date=request.form['date']
+
+    #deal with NULL type
+    if(!source_city):
+        source_city = ""
+    if(!source_airport):
+        source_airport = ""
+    if(!destination_city):
+        destination_city = ""
+    if(!destination_airport):
+        destination_airport = ""
+
+    source_city="%"+source_city+"%"
+    source_airport="%"+source_airport+"%"
+    destination_city="%"+destination_city+"%"
+    destination_airport="%"+destination_airport+"%"
+
+    #cursor used to send queries
+    cursor = conn.cursor()
+
+    if(!date):
+        query='select * from flight as F, airport as D, airport as A where F.departure_airport like %s and F.arrival_airport like %s and F.departure_airport=D.airport_name and D.airport_city like %s and F.arrival_airport=A.airport_name and A.airport_city like %s'
+        cursor.execute(query, (source_airport, destination_airport, source_city, destination_city))
+    else:
+        query='select * from flight as F, airport as D, airport as A where F.departure_airport like %s and F.arrival_airport like %s and F.departure_airport=D.airport_name and D.airport_city like %s and F.arrival_airport=A.airport_name and A.airport_city like %s and date=%s'
+        cursor.execute(query, (source_airport, destination_airport, source_city, destination_city, date))
+    #executes query
+    #stores the results in a variable
+    data = cursor.fetchall()
+    cursor.close()
+    error = None
+    if(data):
+        return render_template('view_public_info.html', error=error, results=data)
+    else:
+        error = 'No flights found  satisfying your search constraints. Please relax your search criterion: source_city: '+source_city+' source_airport: '+source_airport+' destination_city: '+destination_city+' destination_airport: '+destination_airport+' date: '+str(date)
+        return render_template('view_public_info.html', error=error, results=data)
 
 #Authenticates the login
 @app.route('/loginAuthCustomer', methods=['GET', 'POST'])
@@ -113,7 +188,11 @@ def loginAuthStaff():
 	#creates a session for the the user
 	#session is a built in
 	session['username'] = username
-	return redirect(url_for('airline_staff_home'))
+        first_name, last_name, airline_name=get_airline_staff_info(username)
+	session['first_name'] = first_name
+        session['last_name'] = last_name
+        sessions['airline_name'] = airline_name
+        return redirect(url_for('staff_home'))
     else:
 	#returns an error message to the html page
 	error = 'Invalid login or username'
@@ -215,24 +294,65 @@ def registerAuth():
         cursor.close()
         return render_template('front_page.html')
 
-@app.route('/airline_staff_home')
+@app.route('/staff_home')
 def airline_staff_home():
     username=session['username']
-    first_name, last_name, airline_name=get_airline_staff_info(username)
-    return render_template('airline_staff_home.html', username=username, flight_info=data)
+    first_name=session['fisrt_name']
+    last_name=session['last_name']
+    airline_name=session['airline_name']
+
+    cursor=conn.cursor()
+    query='select * from flight where airline_name=%s and ((date(departure_time) between CURDATE() and (CURDATE()+30)) or (date(arrival_time) between CURDATE() and (CURDATE()+30)))'
+    cursor.execute(query, (airline_name,))
+    flight_info=cursor.fetchall()
+    error=None
+    if(flight_info):
+        return render_template('staff_home.html', username=username, flight_info=flight_info, error=error)
+    else:
+        error='No upcoming flight scheduled in 30 days'
+        return render_template('staff_home.html', username=username, flight_info=flight_info, error=error)
 	
-@app.route('/logout_staff')
+@app.route('/staff_customize_view')
+def staff_customize_view():
+    username=session['username']
+    flight_info=None
+    error=None
+    return render_template('staff_customize_view.html', username=username, flight_info=None, error=None)
+
+@app.route('/staff_search_flights')
+def staff_search_flights():
+    start_date=request.form['start_date'] #required
+    end_date=request.form['end_date'] #required
+    
+
+@app.route('/staff_customers_on_flight')
+def staff_customers_on_flight():
+    username=session['username']
+    customer_info=None
+    error=None
+    return render_template('staff_customers_on_flight.html', username=username, customer_info=None, error=None)
+
+@app.route('/staff_logout')
 def logout():
     session.pop('username')
+    session.pop('first_name')
+    session.pop('last_name')
+    session.pop('airline_name')
     return redirect('/')
 
 app.secret_key = 'some key that you will never guess'
 
-def get_airline_staff_airline_name(username):
+def get_airline_staff_info(username):
     cursor=conn.cursor()
     query='select * from airline_staff where username=%s'
     cursor.execute(query, (username,))
-    data=cursor.fetchone
+    info=cursor.fetchone()
+    error=None
+    if(info):
+        return info['first_name'], info['last_name'], info['airline_name']
+    else:
+        print("FATAL ERROR: cannot fetch attributes for this airline staff")
+        return "ERROR", "ERROR", "ERROR"
 
 #Run the app on localhost port 5000
 #debug = True -> you don't have to restart flask
