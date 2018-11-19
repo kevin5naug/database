@@ -20,17 +20,17 @@ def hello():
 
 #Define route for customer login
 @app.route('/login_customer')
-def login():
+def login_customer():
     return render_template('login_customer.html')
 
 #Define route for booking agent login
 @app.route('/login_agent')
-def login():
+def login_agent():
     return render_template('login_agent.html')
 
 #Define route for login
 @app.route('/login_staff')
-def login():
+def login_staff():
     return render_template('login_staff.html')
 
 #Define route for register
@@ -136,14 +136,14 @@ def loginAuthCustomer():
     cursor.close()
     error = None
     if(data):
-	#creates a session for the the user
-	#session is a built in
-	session['email'] = email
-	return redirect(url_for('customer_home'))
+        #creates a session for the the user
+        #session is a built in
+        session['email'] = email
+        return redirect(url_for('customer_home'))
     else:
-	#returns an error message to the html page
-	error = 'Invalid login or username'
-	return render_template('login_customer.html', error=error)
+        #returns an error message to the html page
+        error = 'Invalid login or username'
+        return render_template('login_customer.html', error=error)
 
 #Authenticates the login
 @app.route('/loginAuthAgent', methods=['GET', 'POST'])
@@ -163,14 +163,14 @@ def loginAuthAgent():
     cursor.close()
     error = None
     if(data):
-	#creates a session for the the user
-	#session is a built in
-	session['email'] = email
-	return redirect(url_for('booking_agent_home'))
+        #creates a session for the the user
+        #session is a built in
+        session['email'] = email
+        return redirect(url_for('booking_agent_home'))
     else:
-	#returns an error message to the html page
-	error = 'Invalid login or username'
-	return render_template('login_agent.html', error=error)
+        #returns an error message to the html page
+        error = 'Invalid login or username'
+        return render_template('login_agent.html', error=error)
     #Authenticates the login
 
 @app.route('/loginAuthStaff', methods=['GET', 'POST'])
@@ -190,22 +190,22 @@ def loginAuthStaff():
     cursor.close()
     error = None
     if(data):
-	#creates a session for the the user
-	#session is a built in
-	session['username'] = username
+        #creates a session for the the user
+        #session is a built in
+        session['username'] = username
         first_name, last_name, airline_name=get_airline_staff_info(username)
-	session['first_name'] = first_name
+        session['first_name'] = first_name
         session['last_name'] = last_name
         sessions['airline_name'] = airline_name
         return redirect(url_for('staff_home'))
     else:
-	#returns an error message to the html page
-	error = 'Invalid login or username'
-	return render_template('login_staff.html', error=error)
+        #returns an error message to the html page
+        error = 'Invalid login or username'
+        return render_template('login_staff.html', error=error)
 
 #Authenticates Customer Registration
 @app.route('/registerCustomer', methods=['GET', 'POST'])
-def registerAuth():
+def registerCustomer():
     #grabs information from the forms
     email=request.form['email']
     name=request.form['name']
@@ -242,7 +242,7 @@ def registerAuth():
 
 #Authenticates Booking Agent Registration
 @app.route('/registerBookingAgent', methods=['GET', 'POST'])
-def registerAuth():
+def registerBookingAgent():
     #grabs information from the forms
     email=request.form['email']
     password=request.form['password']
@@ -270,7 +270,7 @@ def registerAuth():
 
 #Authenticates Airline Staff Registration
 @app.route('/registerAirlineStaff', methods=['GET', 'POST'])
-def registerAuth():
+def registerAirlineStaff():
     #grabs information from the forms
     email=request.form['username']
     password=request.form['password']
@@ -312,20 +312,21 @@ def airline_staff_home():
     flight_info=cursor.fetchall()
     error=None
     if(flight_info):
-        return render_template('staff_home.html', username=username, flight_info=flight_info, error=error)
+        return render_template('staff_home.html', username=username, results=flight_info, error=error)
     else:
         error='No upcoming flight scheduled in 30 days'
-        return render_template('staff_home.html', username=username, flight_info=flight_info, error=error)
-	
+        return render_template('staff_home.html', username=username, results=flight_info, error=error)
+        
 @app.route('/staff_customize_view')
 def staff_customize_view():
     username=session['username']
     flight_info=None
     error=None
-    return render_template('staff_customize_view.html', username=username, flight_info=None, error=None)
+    return render_template('staff_customize_view.html', username=username, results=None, error=None)
 
 @app.route('/staff_search_flights')
 def staff_search_flights():
+    username=session['username']
     start_date=request.form['start_date'] #required
     end_date=request.form['end_date'] #required
     source_city = request.form['source_city']
@@ -335,13 +336,13 @@ def staff_search_flights():
     airline_name=session['airline_name']
 
     #deal with NULL type
-    if(!source_city):
+    if(source_city is None):
         source_city = ""
-    if(!source_airport):
+    if(source_airport is None):
         source_airport = ""
-    if(!destination_city):
+    if(destination_city is None):
         destination_city = ""
-    if(!destination_airport):
+    if(destination_airport is None):
         destination_airport = ""
 
     source_city="%"+source_city+"%"
@@ -369,17 +370,42 @@ def staff_search_flights():
     cursor.close()
     error = None
     if(data):
-        return render_template('staff_customize_view.html', error=error, results=data)
+        return render_template('staff_customize_view.html', username=username, error=error, results=data)
     else:
         error = 'No flights found  satisfying your search constraints. Please relax your search criterion: source_city: '+source_city+' source_airport: '+source_airport+' destination_city: '+destination_city+' destination_airport: '+destination_airport+' date: '+str(date)
-        return render_template('staff_customize_view.html', error=error, results=data)
+        return render_template('staff_customize_view.html', username=username, error=error, results=data)
 
 @app.route('/staff_customers_on_flight')
 def staff_customers_on_flight():
     username=session['username']
-    customer_info=None
+    results=None
     error=None
-    return render_template('staff_customers_on_flight.html', username=username, customer_info=None, error=None)
+    return render_template('staff_customers_on_flight.html', username=username, results=None, error=None)
+
+@app.route('/staff_list_customers_on_flight')
+def staff_list_customers_on_flight():
+    username=session['username']
+    airline_name=session['airline_name']
+    flight_num=request.form['flight_num']
+    
+    cursor=conn.cursor()
+    query='''select C.email, C.name, C.phone_number
+    from flight as F, ticket as T, purchases as P, customer as C
+    where F.flight_num=%s
+    and F.airline_name=%s
+    and F.airline_name=T.airline_name 
+    and F.flight_num=T.flight_num
+    and T.ticket_id=P.ticket_id
+    and P.customer_email=C.email'''
+    cursor.execute(query, (flight_num, airline_name))
+    data=cursor.fetchall()
+    cursor.close()
+    error=None
+    if(data):
+        return render_template('staff_customers_on_flight.html', username=username, results=data, error=error)
+    else:
+        error='No results found. Either the flight number is wrong or this flight is empty. Please make sure that this flight number indeed represents a flight in your company.'
+        return render_template('staff_customers_on_flight.html', username=username, results=data, error=error)
 
 @app.route('/staff_logout')
 def logout():
@@ -396,6 +422,7 @@ def get_airline_staff_info(username):
     query='select * from airline_staff where username=%s'
     cursor.execute(query, (username,))
     info=cursor.fetchone()
+    cursor,close()
     error=None
     if(info):
         return info['first_name'], info['last_name'], info['airline_name']

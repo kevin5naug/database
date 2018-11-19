@@ -9,28 +9,21 @@
 	}
 </style>
 
-Upcoming Flight Information:
+<form action="/staff_list_customers_on_flight" method="POST">
+	Flight Number: 
+	<input type="number" name="flight_num" min="0" max="999999999999"></br>
+</form>
+
+Customer Information:
 <table>
-	<th>Airline Name</th>
-	<th>Flight Number</th>
-	<th>Department Airport</th>
-	<th>Department Time</th>
-	<th>Arrival Airport</th>
-	<th>Arrival Time</th>
-	<th>Price</th>
-	<th>Status</th>
-	<th>Airplane ID</th>
+	<th>Email</th>
+	<th>Name</th>
+	<th>Phone_number</th>
 {% for line in results %}
 	<tr>
-	    <td>{{line['airline_name']}}</td>
-	    <td>{{line['flight_num']}}</td>
-	    <td>{{line['departure_airport']}}</td>
-	    <td>{{line['departure_time']}}</td>
-	    <td>{{line['arrival_airport']}}</td>
-	    <td>{{line['arrival_time']}}</td>
-	    <td>{{line['price']}}</td>
-	    <td>{{line['status']}}</td>
-	    <td>{{line['airplane_id']</td>
+	    <td>{{line['email']}}</td>
+	    <td>{{line['name']}}</td>
+	    <td>{{line['phone_number']}}</td>
 	</tr>
 {% endfor %}
 </table>
@@ -40,8 +33,8 @@ Upcoming Flight Information:
 {% endif %}
 
 <a href='/staff_customize_view'>View Flight Based on Custimized Criteria</a>
-<a href='/staff_customers_on_flight'>View Customers on a Flight</a>
-<a href="/staff_logout">Logout</a>
+<a href='staff_home'>Go Back to Your Home Page</a>
+<a href="/staff_logout">Logout Your Staff Account</a>
 </body>
 
 
