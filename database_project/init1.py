@@ -76,16 +76,16 @@ def search_public_info():
     source_airport = request.form['source_airport']
     destination_city = request.form['destination_city']
     destination_airport = request.form['destination_airport']
-    date=request.form['date']
+    date=request.form['date'] #required
 
     #deal with NULL type
-    if(!source_city):
+    if(source_city is None):
         source_city = ""
-    if(!source_airport):
+    if(source_airport is None):
         source_airport = ""
-    if(!destination_city):
+    if(destination_city is None):
         destination_city = ""
-    if(!destination_airport):
+    if(destination_airport is None):
         destination_airport = ""
 
     source_city="%"+source_city+"%"
@@ -96,12 +96,17 @@ def search_public_info():
     #cursor used to send queries
     cursor = conn.cursor()
 
-    if(!date):
-        query='select * from flight as F, airport as D, airport as A where F.departure_airport like %s and F.arrival_airport like %s and F.departure_airport=D.airport_name and D.airport_city like %s and F.arrival_airport=A.airport_name and A.airport_city like %s'
-        cursor.execute(query, (source_airport, destination_airport, source_city, destination_city))
-    else:
-        query='select * from flight as F, airport as D, airport as A where F.departure_airport like %s and F.arrival_airport like %s and F.departure_airport=D.airport_name and D.airport_city like %s and F.arrival_airport=A.airport_name and A.airport_city like %s and date=%s'
-        cursor.execute(query, (source_airport, destination_airport, source_city, destination_city, date))
+    query='''select * 
+    from flight as F, airport as D, airport as A 
+    where F.departure_airport like %s 
+    and F.arrival_airport like %s 
+    and F.departure_airport=D.airport_name 
+    and D.airport_city like %s 
+    and F.arrival_airport=A.airport_name 
+    and A.airport_city like %s 
+    and ((date(F.arrival_time)=%s) 
+    or (date(F.departure_time)=%s))'''
+    cursor.execute(query, (source_airport, destination_airport, source_city, destination_city, date, date))
     #executes query
     #stores the results in a variable
     data = cursor.fetchall()
@@ -297,7 +302,7 @@ def registerAuth():
 @app.route('/staff_home')
 def airline_staff_home():
     username=session['username']
-    first_name=session['fisrt_name']
+    first_name=session['first_name']
     last_name=session['last_name']
     airline_name=session['airline_name']
 
@@ -323,7 +328,51 @@ def staff_customize_view():
 def staff_search_flights():
     start_date=request.form['start_date'] #required
     end_date=request.form['end_date'] #required
-    
+    source_city = request.form['source_city']
+    source_airport = request.form['source_airport']
+    destination_city = request.form['destination_city']
+    destination_airport = request.form['destination_airport']
+    airline_name=session['airline_name']
+
+    #deal with NULL type
+    if(!source_city):
+        source_city = ""
+    if(!source_airport):
+        source_airport = ""
+    if(!destination_city):
+        destination_city = ""
+    if(!destination_airport):
+        destination_airport = ""
+
+    source_city="%"+source_city+"%"
+    source_airport="%"+source_airport+"%"
+    destination_city="%"+destination_city+"%"
+    destination_airport="%"+destination_airport+"%"
+
+    #cursor used to send queries
+    cursor = conn.cursor()
+
+    query='''select * 
+    from flight as F, airport as D, airport as A 
+    where F.departure_airport like %s 
+    and F.arrival_airport like %s 
+    and F.departure_airport=D.airport_name 
+    and D.airport_city like %s 
+    and F.arrival_airport=A.airport_name 
+    and A.airport_city like %s 
+    and ((date(F.arrival_time)<=%s)
+    or (date(F.departure_time)>=%s))'''
+    cursor.execute(query, (source_airport, destination_airport, source_city, destination_city, start_date, end_date))
+    #executes query
+    #stores the results in a variable
+    data = cursor.fetchall()
+    cursor.close()
+    error = None
+    if(data):
+        return render_template('staff_customize_view.html', error=error, results=data)
+    else:
+        error = 'No flights found  satisfying your search constraints. Please relax your search criterion: source_city: '+source_city+' source_airport: '+source_airport+' destination_city: '+destination_city+' destination_airport: '+destination_airport+' date: '+str(date)
+        return render_template('staff_customize_view.html', error=error, results=data)
 
 @app.route('/staff_customers_on_flight')
 def staff_customers_on_flight():
