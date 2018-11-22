@@ -45,7 +45,7 @@ def view_public_info():
 @app.route('/check_flight_status', methods=['GET', 'POST'])
 def check_flight_status():
     flight_num=request.form['flight_num']
-    date=request.form['date'] #required input
+    date=request.form['date']
     cursor=conn.cursor()
     if(flight_num):
         query='''select * 
@@ -331,7 +331,7 @@ def staff_customize_view():
     error=None
     return render_template('staff_customize_view.html', username=username, results=flight_info, error=error)
 
-@app.route('/staff_search_flights')
+@app.route('/staff_search_flights', methods=['GET', 'POST'])
 def staff_search_flights():
     
     if not check_staff_authorization(session):
@@ -399,7 +399,7 @@ def staff_customers_on_flight():
     error=None
     return render_template('staff_customers_on_flight.html', username=username, results=None, error=None)
 
-@app.route('/staff_list_customers_on_flight')
+@app.route('/staff_list_customers_on_flight', methods=['GET', 'POST'])
 def staff_list_customers_on_flight():
     
     if not check_staff_authorization(session):
@@ -429,7 +429,7 @@ def staff_list_customers_on_flight():
         error='No results found. Either the flight number is wrong or this flight is empty. Please make sure that this flight number indeed represents a flight in your company.'
         return render_template('staff_customers_on_flight.html', username=username, results=data, error=error)
 
-@app.route('/staff_create_flight')
+@app.route('/staff_create_flight', methods=['GET', 'POST'])
 def staff_create_flight():
     
     if not check_staff_authorization(session):
@@ -449,7 +449,7 @@ def staff_create_flight():
         error='No upcoming flight scheduled in 30 days'
         return render_template('staff_create_flight.html', username=username, results=flight_info, error=error, message=None)
 
-@app.route('/staff_add_flight')
+@app.route('/staff_add_flight', methods=['GET', 'POST'])
 def staff_add_flight():
 
     if not check_staff_authorization(session):
