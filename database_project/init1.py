@@ -396,7 +396,8 @@ def track_customer_spending():
     query='''select COALESCE(SUM(flight.price),0) as month_spend
             from ticket natural join purchases natural join flight
             where purchases.customer_email=%s
-            and (date(purchase_date) between (CURDATE()-INTERVAL %s MONTH) and (CURDATE()-INTERVAL %s MONTH))
+            and (date(purchase_date) > (CURDATE()-INTERVAL %s MONTH))
+            and (date(purchase_date) <= (CURDATE()-INTERVAL %s MONTH))
     '''
     months_data=[]
     for i in range(6,0,-1):
