@@ -316,7 +316,53 @@ def airline_staff_home():
     else:
         error='No upcoming flight scheduled in 30 days'
         return render_template('staff_home.html', username=username, results=flight_info, error=error)
-        
+
+@app.route('/customer_home')
+def customer_home():
+        email=session['email']
+        name=session['name']
+
+        flight_info=get_customer_upflight(email)
+        error=None
+        if(flight_info):
+            return render_template('customer_home.html',name=name, results=flight_info,error=error)
+        else:
+            error='No upcoming flight scheduled in 30 days'
+            return render_template('customer_home.html',name=name, results=flight_info,error=error)
+
+@app.route('/searchFlightsCustomer')
+def searchFlightsCustomer():
+    d_airport=request.form['departure_airport']
+    a_airport=request.form['arrival_airport']
+    date=request.form['date']
+    cursor=conn.cursor()
+    query='''select airline_name,flight_num,departure_airport,departure_time,arrival_airport,arrival_time,price,airplane_id,(seats-count(ticket_id)) as seats_left  
+             from flight natural join airplane natural join ticket
+             where departure_airport=%s 
+                 and arrival_airport=%s
+                 and (date(arrival_time)=%s)
+             group by airline_name, filght_num
+        '''
+    cursor.execute(query,(d_airport,a_airport,date))
+    flight_info=cursor.fetchall()
+    error=None
+    if (flight_info):
+        return render_template('customer_search_flights.html',results=filght_info,error=error)
+    else:
+        error='No flights available'
+        return render_template('customer_search_flights.html',results=filght_info,error=error)
+
+def get_customer_upflight(email):
+    cursor=conn.cursor()
+    query='''select airline_name,flight_num,departure_airport,departure_time,arrival_airport,arrival_time,price,status,airplane_id
+                 from flight natural join ticket natural join purchases
+                 where purchases.customer_email=%s
+                     and ((date(departure_time) between CURDATE() and (CURDATE()+30)) or (date(arrival_time) between CURDATE() and (CURDATE()+30)))
+                '''
+    cursor.execute(query,(email,))
+    flight_info=cursor.fetchall();
+    return flight_info
+
 @app.route('/staff_customize_view')
 def staff_customize_view():
     username=session['username']
