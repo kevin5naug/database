@@ -10,7 +10,8 @@
 <body>
     <h1>Welcome {{name}}</h1>
     <h2>Upcoming Flight</h2>
-        
+
+{% if results%}  
 <table>
 	<th>Airline Name</th>
 	<th>Flight Number</th>
@@ -31,10 +32,11 @@
 	    <td>{{line['arrival_time']}}</td>
 	    <td>{{line['price']}}</td>
 	    <td>{{line['status']}}</td>
-	    <td>{{line['airplane_id']</td>
+	    <td>{{line['airplane_id']}}</td>
 	</tr>
 {% endfor %}
 </table>
+{% endif %}
     {% if error %}
 	<p class="error"><strong>Error:</strong> {{error}}</p>
     {% endif %}

@@ -139,6 +139,7 @@ def loginAuthCustomer():
         #creates a session for the the user
         #session is a built in
         session['email'] = email
+        session['name']=get_customer_info(email)
         return redirect(url_for('customer_home'))
     else:
         #returns an error message to the html page
@@ -332,7 +333,7 @@ def customer_home():
             error='No upcoming flight scheduled in 30 days'
             return render_template('customer_home.html',name=name, results=flight_info,error=error)
 
-@app.route('/searchFlightsCustomer')
+@app.route('/searchFlightsCustomer', methods=['GET', 'POST'])
 def searchFlightsCustomer():
     d_airport=request.form['departure_airport']
     a_airport=request.form['arrival_airport']
@@ -343,16 +344,17 @@ def searchFlightsCustomer():
              where departure_airport=%s 
                  and arrival_airport=%s
                  and (date(arrival_time)=%s)
-             group by airline_name, filght_num
+             group by airline_name, flight_num
         '''
     cursor.execute(query,(d_airport,a_airport,date))
     flight_info=cursor.fetchall()
+    cursor.close()
     error=None
     if (flight_info):
-        return render_template('customer_search_flights.html',results=filght_info,error=error)
+        return render_template('customer_search_flights.html',results=flight_info,error=error)
     else:
         error='No flights available'
-        return render_template('customer_search_flights.html',results=filght_info,error=error)
+        return render_template('customer_search_flights.html',results=flight_info,error=error)
 
 def get_customer_upflight(email):
     cursor=conn.cursor()
@@ -363,6 +365,7 @@ def get_customer_upflight(email):
                 '''
     cursor.execute(query,(email,))
     flight_info=cursor.fetchall();
+    cursor.close()
     return flight_info
 
 @app.route('/staff_customize_view')
@@ -596,6 +599,18 @@ def check_staff_authorization(session):
         else:
             return False
 
+def get_customer_info(email):
+    cursor=conn.cursor()
+    query='select name from customer where email=%s'
+    cursor.execute(query,(email,))
+    info=cursor.fetchone()
+    cursor.close()
+    error=None
+    if(info):
+        return info['name']
+    else:
+        print("ERROR: person doesn't exist")
+        return "ERROR"
 def get_airline_staff_info(username):
     cursor=conn.cursor()
     query='select * from airline_staff where username=%s'
