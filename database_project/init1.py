@@ -377,6 +377,32 @@ def customer_purchase(airline_name,flight_num,seats_left):
     else:
         message='Purchase fails. There is no seat left.'
         return render_template('customer_purchase.html',message=message)
+    
+@app.route('/track_customer_spending')
+def track_customer_spending():
+    email=session['email']
+    cursor=conn.cursor()
+    query='''select COALESCE(SUM(flight.price),0) as spendings
+             from ticket natural join purchases natural join flight
+             where purchases.customer_email=%s 
+             and (date(purchase_date) between (CURDATE()-INTERVAl 365 DAY) and CURDATE())
+    '''
+    cursor.execute(query,(email,))
+    data=cursor.fetchone()
+    year_spending=int(data['spendings'])
+    query='''select COALESCE(SUM(flight.price),0) as month_spend
+            from ticket natural join purchases natural join flight
+            where purchases.customer_email=%s
+            and (date(purchase_date) between (CURDATE()-INTERVAL %s MONTH) and (CURDATE()-INTERVAL %s MONTH))
+    '''
+    months_data=[]
+    for i in range(6,0,-1):
+        cursor.execute(query,(email,i,i-1))
+        data=cursor.fetchone()
+        months_data.append(int(data['month_spend']))
+    cursor.close()
+    return render_template('customer_spending.html',year_spending=year_spending,months_data=months_data)
+    
 
 @app.route('/staff_customize_view')
 def staff_customize_view():
