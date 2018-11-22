@@ -356,6 +356,26 @@ def searchFlightsCustomer():
         error='No flights available'
         return render_template('customer_search_flights.html',results=flight_info,error=error)
 
+@app.route('/customer_purchase/<airline_name>/<flight_num>/<int:seats_left>',methods=['GET','POST'])
+def customer_purchase(airline_name,flight_num,seats_left):
+    email=session['email']
+    cursor=conn.cursor()
+    message=None
+    if (seats_left>0):
+        query='select MAX(ticket_id) from ticket'
+        cursor.execute(query)
+        new_id=cursor.fetchone()+1
+        query='insert into ticket values(ticket_id=%s,airline_name=%s,flight_num=%s)'
+        cursor.execute(query,(new_id,airline_name,flight_num))
+        query='insert into purchases(ticket_id,customer_email,purchase_date) values(ticket_id=%s,customer_email=%s,purchase_date=CURDATE())'
+        cursor.execute(query,(new_id,email))
+        cursor.close()
+        message='Purchase Succeeds.'
+        return render_template('customer_purchase.html',message=message)
+    else:
+        message='Purchase fails. There is no seat left.'
+        return render_template('customer_purchase.html',message=message)
+
 def get_customer_upflight(email):
     cursor=conn.cursor()
     query='''select airline_name,flight_num,departure_airport,departure_time,arrival_airport,arrival_time,price,status,airplane_id
