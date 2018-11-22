@@ -9,7 +9,8 @@
 	}
 </style>
 
-Upcoming Flight Information:
+{% if results %}
+Upcoming Flight in 30 Days:
 <table>
 	<th>Airline Name</th>
 	<th>Flight Number</th>
@@ -30,10 +31,13 @@ Upcoming Flight Information:
 	    <td>{{line['arrival_time']}}</td>
 	    <td>{{line['price']}}</td>
 	    <td>{{line['status']}}</td>
-	    <td>{{line['airplane_id']</td>
+	    <td>{{line['airplane_id']}}</td>
 	</tr>
 {% endfor %}
 </table>
+{% else %}
+No Upcoming Flight in 30 Days
+{% endif %}
 
 <form action="/staff_add_flight" method="POST">
 	Flight Number: 
@@ -61,10 +65,9 @@ Upcoming Flight Information:
 </br>
 {% if message %}
 	<p>{{message}}</p>
-{% if message %}
+{% endif %}
 </br>
-<a href='/staff_customize_view'>View Flight Based on Custimized Criteria</a></br>
-<a href='/staff_customers_on_flight'>View Customers on a Flight</a></br>
+<a href='/staff_home'>Go Back to Your Home Page</a></br>
 <a href="/staff_logout">Logout</a></br>
 </body>
 

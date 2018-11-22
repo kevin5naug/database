@@ -196,7 +196,7 @@ def loginAuthStaff():
         first_name, last_name, airline_name=get_airline_staff_info(username)
         session['first_name'] = first_name
         session['last_name'] = last_name
-        sessions['airline_name'] = airline_name
+        session['airline_name'] = airline_name
         return redirect(url_for('staff_home'))
     else:
         #returns an error message to the html page
@@ -304,12 +304,13 @@ def staff_home():
     
     if not check_staff_authorization(session):
         error='You are not authorized as an airline staff to perform such action.'
-        return redirect(url_for('/universal_logout'))
+        return redirect(url_for('universal_logout'))
     
     username=session['username']
     first_name=session['first_name']
     last_name=session['last_name']
     airline_name=session['airline_name']
+    error=None
 
     flight_info=staff_get_future_flight_info(airline_name)
     if(flight_info):
@@ -323,19 +324,19 @@ def staff_customize_view():
     
     if not check_staff_authorization(session):
         error='You are not authorized as an airline staff to perform such action.'
-        return redirect(url_for('/universal_logout'))
+        return redirect(url_for('universal_logout'))
     
     username=session['username']
     flight_info=None
     error=None
-    return render_template('staff_customize_view.html', username=username, results=None, error=None)
+    return render_template('staff_customize_view.html', username=username, results=flight_info, error=error)
 
 @app.route('/staff_search_flights')
 def staff_search_flights():
     
     if not check_staff_authorization(session):
         error='You are not authorized as an airline staff to perform such action.'
-        return redirect(url_for('/universal_logout'))
+        return redirect(url_for('universal_logout'))
     
     username=session['username']
     start_date=request.form['start_date'] #required
@@ -391,7 +392,7 @@ def staff_customers_on_flight():
     
     if not check_staff_authorization(session):
         error='You are not authorized as an airline staff to perform such action.'
-        return redirect(url_for('/universal_logout'))
+        return redirect(url_for('universal_logout'))
     
     username=session['username']
     results=None
@@ -403,7 +404,7 @@ def staff_list_customers_on_flight():
     
     if not check_staff_authorization(session):
         error='You are not authorized as an airline staff to perform such action.'
-        return redirect(url_for('/universal_logout'))
+        return redirect(url_for('universal_logout'))
     
     username=session['username']
     airline_name=session['airline_name']
@@ -433,7 +434,7 @@ def staff_create_flight():
     
     if not check_staff_authorization(session):
         error='You are not authorized as an airline staff to perform such action.'
-        return redirect(url_for('/universal_logout'))
+        return redirect(url_for('universal_logout'))
     
     username=session['username']
     first_name=session['first_name']
@@ -453,7 +454,7 @@ def staff_add_flight():
 
     if not check_staff_authorization(session):
         error='You are not authorized as an airline staff to perform such action.'
-        return redirect(url_for('/universal_logout'))
+        return redirect(url_for('universal_logout'))
     
     username=session['username']
     airline_name=session['airline_name']
@@ -480,7 +481,7 @@ def staff_add_flight():
             return render_template('staff_create_flight.html', username=username, results=results, error=error, message=None)
 
 @app.route('/staff_logout')
-def logout():
+def staff_logout():
     session.pop('username')
     session.pop('first_name')
     session.pop('last_name')
@@ -488,7 +489,7 @@ def logout():
     return redirect('/')
 
 @app.route('/universal_logout')
-def logout():
+def universal_logout():
     for item in session.keys():
         session.pop(item)
     return render_template('front_page.html', error='Unauthorized Access: You are forced to be logged out.')
@@ -513,8 +514,8 @@ def staff_get_future_flight_info(airline_name):
     query='''select * 
     from flight 
     where airline_name=%s 
-    and ((date(departure_time) between CURDATE() and (CURDATE()+30)) 
-    or (date(arrival_time) between CURDATE() and (CURDATE()+30)))'''
+    and ((date(departure_time) between CURDATE() and (CURDATE()+ INTERVAL 30 DAY)) 
+    or (date(arrival_time) between CURDATE() and (CURDATE()+INTERVAL 30 DAY)))'''
     cursor.execute(query, (airline_name,))
     flight_info=cursor.fetchall()
     cursor.close()
@@ -554,7 +555,7 @@ def get_airline_staff_info(username):
     query='select * from airline_staff where username=%s'
     cursor.execute(query, (username,))
     info=cursor.fetchone()
-    cursor,close()
+    cursor.close()
     error=None
     if(info):
         return info['first_name'], info['last_name'], info['airline_name']

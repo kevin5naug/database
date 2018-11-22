@@ -9,6 +9,8 @@
 	}
 </style>
 
+{% if results %}
+
 Upcoming Flight Information:
 <table>
 	<th>Airline Name</th>
@@ -30,19 +32,25 @@ Upcoming Flight Information:
 	    <td>{{line['arrival_time']}}</td>
 	    <td>{{line['price']}}</td>
 	    <td>{{line['status']}}</td>
-	    <td>{{line['airplane_id']</td>
+	    <td>{{line['airplane_id']}}</td>
 	</tr>
 {% endfor %}
 </table>
+
+{% else %}
+
+No Upcoming Flight in 30 Days
+
+{% endif %}
 
 {% if error %}
 	<p class="error"><strong>Error:</strong> {{error}}</p>
 {% endif %}
 
-<a href='/staff_customize_view'>View Flight Based on Custimized Criteria</a>
-<a href='/staff_customers_on_flight'>View Customers on a Flight</a>
-<a href='/staff_create_flight'>Create New Flights</a>
-<a href="/staff_logout">Logout</a>
+<a href='/staff_customize_view'>View Flight Based on Custimized Criteria</a></br>
+<a href='/staff_customers_on_flight'>View Customers on a Flight</a></br>
+<a href='/staff_create_flight'>Create New Flights</a></br>
+<a href="/staff_logout">Logout</a></br>
 </body>
 
 
