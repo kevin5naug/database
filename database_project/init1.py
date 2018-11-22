@@ -339,13 +339,16 @@ def searchFlightsCustomer():
     a_airport=request.form['arrival_airport']
     date=request.form['date']
     cursor=conn.cursor()
-    query='''select airline_name,flight_num,departure_airport,departure_time,arrival_airport,arrival_time,price,airplane_id,(seats-count(ticket_id)) as seats_left  
-             from flight natural join airplane natural join ticket
-             where departure_airport=%s 
-                 and arrival_airport=%s
-                 and (date(arrival_time)=%s)
-             group by airline_name, flight_num
-        '''
+    
+    query='''select F.airline_name, F.flight_num, F.departure_airport, F.departure_time, F.arrival_airport, F.arrival_time, F.price, F.airplane_id, (A.seats - (select count(*) from ticket as T where T.airline_name=F.airline_name and T.flight_num=F.flight_num)) as seats_left  
+    from flight as F, airplane as A
+    where F.airline_name=A.airline_name
+    and F.airplane_id=A.airplane_id
+    and departure_airport=%s 
+    and arrival_airport=%s
+    and (date(arrival_time)=%s)
+    group by airline_name, flight_num
+    '''
     cursor.execute(query,(d_airport,a_airport,date))
     flight_info=cursor.fetchall()
     cursor.close()
@@ -362,7 +365,7 @@ def customer_purchase(airline_name,flight_num,seats_left):
     cursor=conn.cursor()
     message=None
     if (seats_left>0):
-        query='select MAX(ticket_id) as ticket_id from ticket'
+        query='select ISNULL(MAX(ticket_id),0) as ticket_id from ticket'
         cursor.execute(query)
         data=cursor.fetchone()
         new_id=int(data['ticket_id'])+1
