@@ -24,6 +24,7 @@
 	<input type="submit" value ="search flight" />
 </form>
 
+{% if results %}
 Requested Flight Information:
 <table>
 	<th>Airline Name</th>
@@ -45,18 +46,18 @@ Requested Flight Information:
 	    <td>{{line['arrival_time']}}</td>
 	    <td>{{line['price']}}</td>
 	    <td>{{line['status']}}</td>
-	    <td>{{line['airplane_id']</td>
+	    <td>{{line['airplane_id']}}</td>
 	</tr>
 {% endfor %}
 </table>
-
+{% endif %}
 {% if error %}
 	<p class="error"><strong>Error:</strong> {{error}}</p>
 {% endif %}
 
-<a href='/staff_customers_on_flight'>View Customers on a Flight</a>
-<a href="/staff_home">Go Back to Your Home Page</a>
-<a href="/staff_logout">Log Out Your Staff Account</a>
+<a href='/staff_customers_on_flight'>View Customers on a Flight</a></br>
+<a href="/staff_home">Go Back to Your Home Page</a></br>
+<a href="/staff_logout">Log Out Your Staff Account</a></br>
 </body>
 
 

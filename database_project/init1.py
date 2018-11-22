@@ -16,7 +16,7 @@ conn = pymysql.connect(host='192.168.64.2',
 #Define a route to hello function
 @app.route('/')
 def hello():
-    return render_template('front_page.html')
+    return render_template('front_page.html', error=None)
 
 #Define route for customer login
 @app.route('/login_customer')
@@ -70,7 +70,7 @@ def check_flight_status():
         return render_template('view_public_info.html', error=error, results=data)
 
 @app.route('/search_upcoming_flights', methods=['GET', 'POST'])
-def search_public_info():
+def search_upcoming_flights():
     #grabs information from the forms
     source_city = request.form['source_city']
     source_airport = request.form['source_airport']
@@ -196,7 +196,7 @@ def loginAuthStaff():
         first_name, last_name, airline_name=get_airline_staff_info(username)
         session['first_name'] = first_name
         session['last_name'] = last_name
-        sessions['airline_name'] = airline_name
+        session['airline_name'] = airline_name
         return redirect(url_for('staff_home'))
     else:
         #returns an error message to the html page
@@ -300,17 +300,19 @@ def registerAirlineStaff():
         return render_template('front_page.html')
 
 @app.route('/staff_home')
-def airline_staff_home():
+def staff_home():
+    
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    
     username=session['username']
     first_name=session['first_name']
     last_name=session['last_name']
     airline_name=session['airline_name']
-
-    cursor=conn.cursor()
-    query='select * from flight where airline_name=%s and ((date(departure_time) between CURDATE() and (CURDATE()+30)) or (date(arrival_time) between CURDATE() and (CURDATE()+30)))'
-    cursor.execute(query, (airline_name,))
-    flight_info=cursor.fetchall()
     error=None
+
+    flight_info=staff_get_future_flight_info(airline_name)
     if(flight_info):
         return render_template('staff_home.html', username=username, results=flight_info, error=error)
     else:
@@ -365,13 +367,23 @@ def get_customer_upflight(email):
 
 @app.route('/staff_customize_view')
 def staff_customize_view():
+    
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    
     username=session['username']
     flight_info=None
     error=None
-    return render_template('staff_customize_view.html', username=username, results=None, error=None)
+    return render_template('staff_customize_view.html', username=username, results=flight_info, error=error)
 
 @app.route('/staff_search_flights')
 def staff_search_flights():
+    
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    
     username=session['username']
     start_date=request.form['start_date'] #required
     end_date=request.form['end_date'] #required
@@ -423,6 +435,11 @@ def staff_search_flights():
 
 @app.route('/staff_customers_on_flight')
 def staff_customers_on_flight():
+    
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    
     username=session['username']
     results=None
     error=None
@@ -430,6 +447,11 @@ def staff_customers_on_flight():
 
 @app.route('/staff_list_customers_on_flight')
 def staff_list_customers_on_flight():
+    
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    
     username=session['username']
     airline_name=session['airline_name']
     flight_num=request.form['flight_num']
@@ -453,22 +475,133 @@ def staff_list_customers_on_flight():
         error='No results found. Either the flight number is wrong or this flight is empty. Please make sure that this flight number indeed represents a flight in your company.'
         return render_template('staff_customers_on_flight.html', username=username, results=data, error=error)
 
+@app.route('/staff_create_flight')
+def staff_create_flight():
+    
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    
+    username=session['username']
+    first_name=session['first_name']
+    last_name=session['last_name']
+    airline_name=session['airline_name']
+    error=None
+    
+    flight_info=staff_get_future_flight_info(airline_name)
+    if(flight_info):
+        return render_template('staff_create_flight.html', username=username, results=flight_info, error=None, message=None)
+    else:
+        error='No upcoming flight scheduled in 30 days'
+        return render_template('staff_create_flight.html', username=username, results=flight_info, error=error, message=None)
+
+@app.route('/staff_add_flight')
+def staff_add_flight():
+
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    
+    username=session['username']
+    airline_name=session['airline_name']
+    flight_num=request.form['flight_num']
+    departure_airport=request.form['departure_airport']
+    departure_time=request.form['departure_time']
+    arrival_airport=request.form['arrival_airport']
+    arrival_time=request.form['arrival_time']
+    price=request.form['price']
+    status=request.form['status']
+    airplane_id=request.form['airplane_id']
+
+    if flight_already_exist(airline_name, flight_num):
+        results=staff_get_future_flight_info(airline_name)
+        error='Sorry. A flight has already used this flight number. Operation Failed.'
+        return render_template('staff_create_flight.html', username=username, results=results, error=error, message=None)
+    else:
+        sucess=staff_insert_new_flight(airline_name, flight_num, departure_airport, departure_time, arrival_airport, arrival_time, price, status, airplane_id)
+        if success:
+            results=staff_get_future_flight_info(airline_name)
+            return render_template('staff_create_flight.html', username=username, results=results, error=None, message="Success: the flight has been added to the system")
+        else:
+            error='Fail: please provide flight information that is consistent with the current system'
+            return render_template('staff_create_flight.html', username=username, results=results, error=error, message=None)
+
 @app.route('/staff_logout')
-def logout():
+def staff_logout():
     session.pop('username')
     session.pop('first_name')
     session.pop('last_name')
     session.pop('airline_name')
     return redirect('/')
 
+@app.route('/universal_logout')
+def universal_logout():
+    for item in session.keys():
+        session.pop(item)
+    return render_template('front_page.html', error='Unauthorized Access: You are forced to be logged out.')
+
 app.secret_key = 'some key that you will never guess'
+
+
+#Utility Function
+def staff_insert_new_flight(airline_name, flight_num, departure_airport, departure_time, arrival_airport, arrival_time, price, status, airplane_id):
+    cursor=conn.cursor()
+    
+    #TODO: sanitize Input
+
+    ins='insert into flight values(%s, %s, %s, %s, %s, %s, %s, %s, %s)'
+    cursor.execute(ins, (airline_name, flight_num, departure_airport, departure_time, arrival_airport, arrival_time, price, status, airplane_id))
+    conn.commit()
+    cursor.close()
+    return True
+
+def staff_get_future_flight_info(airline_name):
+    cursor=conn.cursor()
+    query='''select * 
+    from flight 
+    where airline_name=%s 
+    and ((date(departure_time) between CURDATE() and (CURDATE()+ INTERVAL 30 DAY)) 
+    or (date(arrival_time) between CURDATE() and (CURDATE()+INTERVAL 30 DAY)))'''
+    cursor.execute(query, (airline_name,))
+    flight_info=cursor.fetchall()
+    cursor.close()
+    return flight_info
+
+def flight_already_exist(airline_name, flight_num):
+    cursor=conn.cursor()
+    query='''select * 
+    from flight
+    where airline_name=%s
+    and flight_num=%s'''
+    cursor.execute(query, (airline_name, flight_num))
+    data=cursor.fetchall()
+    cursor.close()
+    if(data):
+        return True
+    else:
+        return False
+
+def check_staff_authorization(session):
+    if('username' not in session.keys()):
+        return False
+    else:
+        username=session['username']
+        cursor=conn.cursor()
+        query='select * from airline_staff where username=%s'
+        cursor.execute(query, (username))
+        info=cursor.fetchone()
+        cursor.close()
+        if(info):
+            return True
+        else:
+            return False
 
 def get_airline_staff_info(username):
     cursor=conn.cursor()
     query='select * from airline_staff where username=%s'
     cursor.execute(query, (username,))
     info=cursor.fetchone()
-    cursor,close()
+    cursor.close()
     error=None
     if(info):
         return info['first_name'], info['last_name'], info['airline_name']
