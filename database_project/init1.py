@@ -408,6 +408,7 @@ def staff_search_flights():
         return redirect(url_for('universal_logout'))
     
     username=session['username']
+    airline_name=session['airline_name']
     start_date=request.form['start_date'] #required
     end_date=request.form['end_date'] #required
     source_city = request.form['source_city']
@@ -436,7 +437,8 @@ def staff_search_flights():
 
     query='''select * 
     from flight as F, airport as D, airport as A 
-    where F.departure_airport like %s 
+    where F.airline_name=%s
+    and F.departure_airport like %s
     and F.arrival_airport like %s 
     and F.departure_airport=D.airport_name 
     and D.airport_city like %s 
@@ -444,7 +446,7 @@ def staff_search_flights():
     and A.airport_city like %s 
     and ((date(F.arrival_time)<=%s)
     or (date(F.departure_time)>=%s))'''
-    cursor.execute(query, (source_airport, destination_airport, source_city, destination_city, start_date, end_date))
+    cursor.execute(query, (airline_name, source_airport, destination_airport, source_city, destination_city, end_date, end_date))
     #executes query
     #stores the results in a variable
     data = cursor.fetchall()
@@ -453,7 +455,7 @@ def staff_search_flights():
     if(data):
         return render_template('staff_customize_view.html', username=username, error=error, results=data)
     else:
-        error = 'No flights found  satisfying your search constraints. Please relax your search criterion: source_city: '+source_city+' source_airport: '+source_airport+' destination_city: '+destination_city+' destination_airport: '+destination_airport+' date: '+str(date)
+        error = 'No flights found  satisfying your search constraints. Please relax your search criterion.'
         return render_template('staff_customize_view.html', username=username, error=error, results=data)
 
 @app.route('/staff_customers_on_flight')
@@ -541,7 +543,7 @@ def staff_add_flight():
         error='Sorry. A flight has already used this flight number. Operation Failed.'
         return render_template('staff_create_flight.html', username=username, results=results, error=error, message=None)
     else:
-        sucess=staff_insert_new_flight(airline_name, flight_num, departure_airport, departure_time, arrival_airport, arrival_time, price, status, airplane_id)
+        success=staff_insert_new_flight(airline_name, flight_num, departure_airport, departure_time, arrival_airport, arrival_time, price, status, airplane_id)
         if success:
             results=staff_get_future_flight_info(airline_name)
             return render_template('staff_create_flight.html', username=username, results=results, error=None, message="Success: the flight has been added to the system")
