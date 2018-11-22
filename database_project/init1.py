@@ -378,18 +378,6 @@ def customer_purchase(airline_name,flight_num,seats_left):
         message='Purchase fails. There is no seat left.'
         return render_template('customer_purchase.html',message=message)
 
-def get_customer_upflight(email):
-    cursor=conn.cursor()
-    query='''select airline_name,flight_num,departure_airport,departure_time,arrival_airport,arrival_time,price,status,airplane_id
-                 from flight natural join ticket natural join purchases
-                 where purchases.customer_email=%s
-                     and ((date(departure_time) between CURDATE() and (CURDATE()+30)) or (date(arrival_time) between CURDATE() and (CURDATE()+30)))
-                '''
-    cursor.execute(query,(email,))
-    flight_info=cursor.fetchall();
-    cursor.close()
-    return flight_info
-
 @app.route('/staff_customize_view')
 def staff_customize_view():
     
@@ -571,6 +559,19 @@ app.secret_key = 'some key that you will never guess'
 
 
 #Utility Function
+def get_customer_upflight(email):
+    cursor=conn.cursor()
+    query='''select airline_name,flight_num,departure_airport,departure_time,arrival_airport,arrival_time,price,status,airplane_id 
+    from flight natural join ticket natural join purchases
+    where purchases.customer_email=%s
+    and ((date(departure_time) between CURDATE() and (CURDATE()+ INTERVAL 30 DAY)) 
+    or (date(arrival_time) between CURDATE() and (CURDATE()+ INTERVAL 30 DAY)))
+    '''
+    cursor.execute(query,(email,))
+    flight_info=cursor.fetchall();
+    cursor.close()
+    return flight_info
+
 def staff_insert_new_flight(airline_name, flight_num, departure_airport, departure_time, arrival_airport, arrival_time, price, status, airplane_id):
     cursor=conn.cursor()
     
@@ -635,6 +636,7 @@ def get_customer_info(email):
     else:
         print("ERROR: person doesn't exist")
         return "ERROR"
+
 def get_airline_staff_info(username):
     cursor=conn.cursor()
     query='select * from airline_staff where username=%s'
