@@ -66,7 +66,7 @@ def check_flight_status():
     if(data):
         return render_template('view_public_info.html', error=error, results=data)
     else:
-        error = 'No flights found  satisfying your search constraints. Please make sure you input the right flight information: flight_number: '+str(flight_number)+' date: '+str(date)
+        error = 'No flights found  satisfying your search constraints. Please make sure you input the right flight information'
         return render_template('view_public_info.html', error=error, results=data)
 
 @app.route('/search_upcoming_flights', methods=['GET', 'POST'])
@@ -115,7 +115,7 @@ def search_upcoming_flights():
     if(data):
         return render_template('view_public_info.html', error=error, results=data)
     else:
-        error = 'No flights found  satisfying your search constraints. Please relax your search criterion: source_city: '+source_city+' source_airport: '+source_airport+' destination_city: '+destination_city+' destination_airport: '+destination_airport+' date: '+str(date)
+        error = 'No flights found  satisfying your search constraints. Please relax your search criteria'
         return render_template('view_public_info.html', error=error, results=data)
 
 #Authenticates the login
