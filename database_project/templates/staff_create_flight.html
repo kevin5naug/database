@@ -1,0 +1,71 @@
+<html>
+<head>
+</head>
+<body>
+<h1>Welcome Staff {{username}}</h1>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+Upcoming Flight Information:
+<table>
+	<th>Airline Name</th>
+	<th>Flight Number</th>
+	<th>Department Airport</th>
+	<th>Department Time</th>
+	<th>Arrival Airport</th>
+	<th>Arrival Time</th>
+	<th>Price</th>
+	<th>Status</th>
+	<th>Airplane ID</th>
+{% for line in results %}
+	<tr>
+	    <td>{{line['airline_name']}}</td>
+	    <td>{{line['flight_num']}}</td>
+	    <td>{{line['departure_airport']}}</td>
+	    <td>{{line['departure_time']}}</td>
+	    <td>{{line['arrival_airport']}}</td>
+	    <td>{{line['arrival_time']}}</td>
+	    <td>{{line['price']}}</td>
+	    <td>{{line['status']}}</td>
+	    <td>{{line['airplane_id']</td>
+	</tr>
+{% endfor %}
+</table>
+
+<form action="/staff_add_flight" method="POST">
+	Flight Number: 
+	<input type="number" name="flight_num" min="0" max="99999999999" required/></br>
+	Departure Airport:
+	<input type='text' name='departure_airport' required/></br>
+	Departure Time:
+	<input type="datetime-local" name="departure_time" required/></br>
+	Arrival Airport:
+	<input type='text' name='arrival_airport' required/></br>
+	Arrival Time:
+	<input type='datetime-local' name='arrival_time' required/></br>
+	Price:
+	<input type='number' name='price' min='0' max='9999999999' required/></br>
+	Status:
+	<input type='text' name='status' required/></br>
+	Airplane ID:
+	<input type='number' name='airplane_id' min='0' max='99999999999' required/></br>
+	<input type="submit" value="add this flight" />
+</form>
+
+{% if error %}
+	<p class="error"><strong>Error:</strong> {{error}}</p>
+{% endif %}
+</br>
+{% if message %}
+	<p>{{message}}</p>
+{% if message %}
+</br>
+<a href='/staff_customize_view'>View Flight Based on Custimized Criteria</a></br>
+<a href='/staff_customers_on_flight'>View Customers on a Flight</a></br>
+<a href="/staff_logout">Logout</a></br>
+</body>
+
+</html>
