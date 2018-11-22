@@ -362,13 +362,15 @@ def customer_purchase(airline_name,flight_num,seats_left):
     cursor=conn.cursor()
     message=None
     if (seats_left>0):
-        query='select MAX(ticket_id) from ticket'
+        query='select MAX(ticket_id) as ticket_id from ticket'
         cursor.execute(query)
-        new_id=cursor.fetchone()+1
-        query='insert into ticket values(ticket_id=%s,airline_name=%s,flight_num=%s)'
-        cursor.execute(query,(new_id,airline_name,flight_num))
-        query='insert into purchases(ticket_id,customer_email,purchase_date) values(ticket_id=%s,customer_email=%s,purchase_date=CURDATE())'
+        data=cursor.fetchone()
+        new_id=int(data['ticket_id'])+1
+        query='insert into ticket values(%s, %s, %s)'
+        cursor.execute(query,(new_id, airline_name, flight_num))
+        query='insert into purchases(ticket_id,customer_email,purchase_date) values(%s, %s, CURDATE())'
         cursor.execute(query,(new_id,email))
+        conn.commit()
         cursor.close()
         message='Purchase Succeeds.'
         return render_template('customer_purchase.html',message=message)

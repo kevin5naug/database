@@ -31,7 +31,7 @@
 	    <td>{{line['price']}}</td>
 	    <td>{{line['airplane_id']}}</td>
         <td>{{line['seats_left']}}</td>
-        <td><a href={{ url_for('/customer_purchase', airline_name={{line['airline_name']}}, flight_num={{line['flight_num']}}, seats_left={{line['seats_left']}})}}>purchase</a></td>
+        <td><a href={{ url_for('customer_purchase', airline_name=line['airline_name'], flight_num=line['flight_num'], seats_left=line['seats_left'])}}>purchase</a></td>
 	</tr>
 {% endfor %}
 </table>
