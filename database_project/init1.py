@@ -365,7 +365,7 @@ def customer_purchase(airline_name,flight_num,seats_left):
     cursor=conn.cursor()
     message=None
     if (seats_left>0):
-        query='select ISNULL(MAX(ticket_id),0) as ticket_id from ticket'
+        query='select IFNULL(MAX(ticket_id),0) as ticket_id from ticket'
         cursor.execute(query)
         data=cursor.fetchone()
         new_id=int(data['ticket_id'])+1
