@@ -720,6 +720,18 @@ def staff_update_flight_status():
     else:
         return render_template('staff_change_flight_status.html', username=username, message="Success: Flight Status Updated.", error=None)
 
+@app.route('/staff_add_airplane_in_system')
+def staff_add_airplane_in_system():
+
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+
+    username=session['username']
+    message=None
+    error=None
+    return render_template('staff_add_airplane_in_system.html', username=username, message=None, error=None)
+
 @app.route('/staff_logout')
 def staff_logout():
     session.pop('username')
