@@ -707,14 +707,19 @@ def staff_update_flight_status():
     where airline_name=%s
     and flight_num=%s
     '''
+    affected_row=0
     try:
         cursor.execute(query, (new_status, airline_name, flight_num))
         conn.commit()
+        affected_row=cursor.rowcount
         cursor.close()
     except Error as err:
         return render_template('staff_change_flight_status.html', username=username, message=None, error=err)
     
-    return render_template('staff_change_flight_status.html', username=username, message="Success: Flight Status Updated.", error=None)
+    if affected_row==0:
+        return render_template('staff_change_flight_status.html', username=username, message=None, error="Operation Failure: there is no such flight")
+    else:
+        return render_template('staff_change_flight_status.html', username=username, message="Success: Flight Status Updated.", error=None)
 
 @app.route('/staff_logout')
 def staff_logout():
