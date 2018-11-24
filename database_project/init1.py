@@ -396,8 +396,6 @@ def agent_purchase(airline_name,flight_num,seats_left):
 def agent_commission():
     agent_email=session['email']
     agent_id=session['booking_agent_id']
-    start_date=request.form['start']
-    end_date=request.form['end']
     cursor=conn.cursor()
     query='''select coalesce(SUM(price),0)/10 as total_commission
             from flight natural join ticket natural join purchases
@@ -452,11 +450,11 @@ def check_commission():
     query='''select coalesce(SUM(price),0)/10 as total_commission
             from flight natural join ticket natural join purchases
             where purchases.booking_agent_id=%s
-            and (date(purchase_date) between (date(start_date)) and date(end_date))
+            and purchase_date between %s and %s
             '''
-    cursor.execute(query,(agent_id,))
+    cursor.execute(query,(agent_id, start_date, end_date))
     data=cursor.fetchone()
-    history_commission="My history commission from "+start_date+" to "+end_date+": "+data['total_commission']
+    history_commission="My history commission from "+str(start_date)+" to "+str(end_date)+": "+str(data['total_commission'])
     cursor.close()
     return render_template('agent_view_commission.html',total_commission=total_commission,total_num=total_num,average=average,history_commission=history_commission)
 
