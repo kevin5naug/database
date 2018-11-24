@@ -356,7 +356,6 @@ def searchFlightsAgent():
         error='No flights available'
         return render_template('agent_search_flights.html',results=flight_info,error=error)   
 
-
 @app.route('/customer_home')
 def customer_home():
         email=session['email']
@@ -376,13 +375,16 @@ def searchFlightsCustomer():
     a_airport=request.form['arrival_airport']
     date=request.form['date']
     cursor=conn.cursor()
-    query='''select airline_name,flight_num,departure_airport,departure_time,arrival_airport,arrival_time,price,airplane_id,(seats-count(ticket_id)) as seats_left  
-             from flight natural join airplane natural join ticket
-             where departure_airport=%s 
-                 and arrival_airport=%s
-                 and (date(arrival_time)=%s)
-             group by airline_name, flight_num
-        '''
+    
+    query='''select F.airline_name, F.flight_num, F.departure_airport, F.departure_time, F.arrival_airport, F.arrival_time, F.price, F.airplane_id, (A.seats - (select count(*) from ticket as T where T.airline_name=F.airline_name and T.flight_num=F.flight_num)) as seats_left  
+    from flight as F, airplane as A
+    where F.airline_name=A.airline_name
+    and F.airplane_id=A.airplane_id
+    and departure_airport=%s 
+    and arrival_airport=%s
+    and (date(arrival_time)=%s)
+    group by airline_name, flight_num
+    '''
     cursor.execute(query,(d_airport,a_airport,date))
     flight_info=cursor.fetchall()
     cursor.close()
@@ -399,7 +401,7 @@ def customer_purchase(airline_name,flight_num,seats_left):
     cursor=conn.cursor()
     message=None
     if (seats_left>0):
-        query='select MAX(ticket_id) as ticket_id from ticket'
+        query='select IFNULL(MAX(ticket_id),0) as ticket_id from ticket'
         cursor.execute(query)
         data=cursor.fetchone()
         new_id=int(data['ticket_id'])+1
@@ -414,6 +416,7 @@ def customer_purchase(airline_name,flight_num,seats_left):
     else:
         message='Purchase fails. There is no seat left.'
         return render_template('customer_purchase.html',message=message)
+
     
 @app.route('/track_customer_spending')
 def track_customer_spending():
@@ -430,20 +433,16 @@ def track_customer_spending():
     query='''select COALESCE(SUM(flight.price),0) as month_spend
             from ticket natural join purchases natural join flight
             where purchases.customer_email=%s
-            and (date(purchase_date) between (CURDATE()-INTERVAL %s MONTH) and (CURDATE()-INTERVAL %s MONTH))
+            and (date(purchase_date) > (CURDATE()-INTERVAL %s MONTH))
+            and (date(purchase_date) <= (CURDATE()-INTERVAL %s MONTH))
     '''
-    months_spending=[]
-    months_label=[]
+    months_data=[]
     for i in range(6,0,-1):
         cursor.execute(query,(email,i,i-1))
         data=cursor.fetchone()
-        months_spending.append(int(data['month_spend']))
-        months_label.append(str(i)+" month ago")
+        months_data.append(int(data['month_spend']))
     cursor.close()
-    print(months_spending, months_label)
-    upperbound=max(months_spending)
-    return render_template('customer_spending_script.html', max=upperbound, year_spending=year_spending, labels=months_label, values=months_spending)
-    
+    return render_template('customer_spending.html',year_spending=year_spending,months_data=months_data)
 
 @app.route('/customize_customer_spending')
 def track_customer_spending():
