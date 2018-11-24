@@ -9,5 +9,12 @@
     <h3>My total commission is: {{total_commission}}</h3>
     <h3>Number of tickets sold: {{total_num}}</h3>
     <h3>My average commission is: {{average}}</h3>
+        
+    <h3>Check history commission</h3>
+    <form action="/agent_commission" method="POST">
+        <p>start date: <input type="date" name="start" placeholder="date" required/> end date:<input type="date" name="end" placeholder="date" required/> <input type="submit" value=Find /></p>
+        </form>
+    <p>History commission:{{history_commission}}</p>
+    <h3><a href='/booking_agent_home'>Return home</a></h3>
     </body>
 </html>
