@@ -1,5 +1,5 @@
 #Import Flask Library
-from flask import Flask, Markup, render_template, request, session, url_for, redirect
+from flask import Flask, render_template, request, session, url_for, redirect
 import pymysql.cursors
 
 #Initialize the app from Flask
@@ -399,17 +399,13 @@ def track_customer_spending():
             and (date(purchase_date) > (CURDATE()-INTERVAL %s MONTH))
             and (date(purchase_date) <= (CURDATE()-INTERVAL %s MONTH))
     '''
-    months_spending=[]
-    months_label=[]
+    months_data=[]
     for i in range(6,0,-1):
         cursor.execute(query,(email,i,i-1))
         data=cursor.fetchone()
-        months_spending.append(int(data['month_spend']))
-        months_label.append(str(i)+" month ago")
+        months_data.append(int(data['month_spend']))
     cursor.close()
-    print(months_spending, months_label)
-    upperbound=max(months_spending)
-    return render_template('customer_spending_script.html', max=upperbound, year_spending=year_spending, labels=months_label, values=months_spending)
+    return render_template('customer_spending.html',year_spending=year_spending,months_data=months_data)
     
 
 @app.route('/staff_customize_view')
