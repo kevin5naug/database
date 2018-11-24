@@ -445,6 +445,36 @@ def track_customer_spending():
     return render_template('customer_spending_script.html', max=upperbound, year_spending=year_spending, labels=months_label, values=months_spending)
     
 
+@app.route('/customize_customer_spending')
+def track_customer_spending():
+    email=session['email']
+    cursor=conn.cursor()
+    query='''select COALESCE(SUM(flight.price),0) as spendings
+             from ticket natural join purchases natural join flight
+             where purchases.customer_email=%s 
+             and (date(purchase_date) between (CURDATE()-INTERVAl 365 DAY) and CURDATE())
+    '''
+    cursor.execute(query,(email,))
+    data=cursor.fetchone()
+    year_spending=int(data['spendings'])
+    query='''select COALESCE(SUM(flight.price),0) as month_spend
+            from ticket natural join purchases natural join flight
+            where purchases.customer_email=%s
+            and (date(purchase_date) > (CURDATE()-INTERVAL %s MONTH))
+            and (date(purchase_date) <= (CURDATE()-INTERVAL %s MONTH))
+    '''
+    months_spending=[]
+    months_label=[]
+    for i in range(6,0,-1):
+        cursor.execute(query,(email,i,i-1))
+        data=cursor.fetchone()
+        months_spending.append(int(data['month_spend']))
+        months_label.append(str(i)+" month ago")
+    cursor.close()
+    print(months_spending, months_label)
+    upperbound=max(months_spending)
+    return render_template('customer_spending_script.html', max=upperbound, year_spending=year_spending, labels=months_label, values=months_spending)
+
 @app.route('/staff_customize_view')
 def staff_customize_view():
     
