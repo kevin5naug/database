@@ -409,7 +409,7 @@ def agent_commission():
             from ticket natural join flight natural join purchases
             where purchases.booking_agent_id=%s
             and (date(purchase_date) between (CURDATE()-INTERVAL 30 DAY) and CURDATE())
-'''
+        '''
     cursor.execute(query,(agent_id,))
     data=cursor.fetchone()
     total_num=int(data['total_num'])
@@ -418,7 +418,8 @@ def agent_commission():
     else:
         average=total_commission/total_num
     cursor.close()
-    return render_template('agent_view_commission.html',total_commission=total_commission,total_num=total_num,average=average)
+    history_commission=check_commission(agent_id)
+    return render_template('agent_view_commission.html',total_commission=total_commission,total_num=total_num,average=average,history_commission=history_commission)
 
 
 @app.route('/customer_home')
@@ -848,6 +849,24 @@ def get_agent_upflight(email):
     flight_info=cursor.fetchall();
     cursor.close()
     return flight_info
+
+def check_commission(agent_id):
+    cursor=conn.cursor()
+    start_date=request.form['start']
+    end_date=request.form['end']
+    if(start_date):
+        query='''select coalesce(SUM(price),0)/10 as total_commission
+            from flight natural join ticket natural join purchases
+            where purchases.booking_agent_id=%s
+            and (date(purchase_date) between (date(start_date)) and date(end_date))
+            '''
+        cursor.execute(query,(agent_id,))
+        data=cursor.fetchone()
+        history_commission=int(data['total_commission'])
+        cursor.close()
+        return history_commission
+    else:
+        return 0
 
 #Run the app on localhost port 5000
 #debug = True -> you don't have to restart flask
