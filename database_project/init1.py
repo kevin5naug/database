@@ -626,7 +626,7 @@ def staff_list_customers_on_flight():
         error='No results found. Either the flight number is wrong or this flight is empty. Please make sure that this flight number indeed represents a flight in your company.'
         return render_template('staff_customers_on_flight.html', username=username, results=data, error=error)
 
-@app.route('/staff_create_flight', methods=['GET', 'POST'])
+@app.route('/staff_create_flight')
 def staff_create_flight():
     
     if not check_staff_authorization(session):
@@ -676,6 +676,45 @@ def staff_add_flight():
         else:
             error='Fail: please provide flight information that is consistent with the current system'
             return render_template('staff_create_flight.html', username=username, results=results, error=error, message=None)
+
+@app.route('/staff_change_flight_status')
+def staff_change_flight_status():
+
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+
+    username=session['username']
+    message=None
+    error=None
+    return render_template('staff_change_flight_status.html', username=username, message=None, error=None)
+
+@app.route('/staff_update_flight_status', methods=['GET', 'POST'])
+def staff_update_flight_status():
+
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+
+    username=session['username']
+    airline_name=session['airline_name']
+    flight_num=request.form['flight_num']
+    new_status=request.form['flight_status']
+
+    cursor=conn.cursor()
+    query='''update flight 
+    set status=%s
+    where airline_name=%s
+    and flight_num=%s
+    '''
+    try:
+        cursor.execute(query, (new_status, airline_name, flight_num))
+        conn.commit()
+        cursor.close()
+    except Error as err:
+        return render_template('staff_change_flight_status.html', username=username, message=None, error=err)
+    
+    return render_template('staff_change_flight_status.html', username=username, message="Success: Flight Status Updated.", error=None)
 
 @app.route('/staff_logout')
 def staff_logout():
