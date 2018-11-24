@@ -10,6 +10,7 @@
     
 <body>
 <h1>Welcome agent {{agent_id}}</h1>
+<h3>Your commission rate is 10%</h3>
 <h2>Upcoming Flight</h2>
 {% if results%}  
 <table>
@@ -51,8 +52,12 @@
     arrival date:
     <input type="date" name="date" placeholder="date" required/>
     <input type="submit" value= search />
-    
     </form>  
-    
+    <h2>
+    <a href='/agent_commission'>View My Commission</a>
+    </h2>
+    <h2>
+    <a href='/log_out'>Log out</a>
+    </h2>
 </body>
 </html>

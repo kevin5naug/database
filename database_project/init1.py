@@ -301,6 +301,12 @@ def registerAirlineStaff():
         cursor.close()
         return render_template('front_page.html')
 
+@app.route('/log_out')
+def log_out():
+    for item in session.keys():
+        session.pop(item)
+    return   render_template('front_page.html')
+
 @app.route('/staff_home')
 def staff_home():
     
@@ -387,6 +393,33 @@ def agent_purchase(airline_name,flight_num,seats_left):
         message='Purchase fails. There is no seat left.'
         return render_template('agent_purchase_finish.html',message=message)
 
+@app.route('/agent_commission', method=['GET','POST'])
+def agent_commission():
+    agent_email=session['email']
+    agent_id=session['booking_agent_id']
+    cursor=conn.cursor()
+    query='''select coalesce(SUM(price),0)/10 as total_commission
+            from flight natural join ticket natural join purchases
+            where purchases.booking_agent_id=%s
+            and (date(purchase_date) between (CURDATE()-INTERVAL 30 DAY) and CURDATE())
+            '''
+    cursor.execute(query,(agent_id,))
+    data=cursor.fetchone()
+    total_commission=int(data['total_commission'])
+    query='''select count(purchases.ticket_id) as total_num
+            from ticket natural join flight natural join purchases
+            where purchases.booking_agent_id=%s
+            and (date(purchase_date) between (CURDATE()-INTERVAL 30 DAY) and CURDATE())
+'''
+    cursor.execute(query,(agent_id,))
+    data=cursor.fetchone()
+    total_num=int(data['total_num'])
+    if (total_num==0):
+        average=0
+    else:
+        average=total_commission/total_num
+    cursor.close()
+    return render_template('agent_view_commission.html',total_commission=total_commission,total_num=total_num,average=average)
 
 
 @app.route('/customer_home')
