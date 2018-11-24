@@ -1,0 +1,58 @@
+<html>
+<head>
+<title>Home</title>    
+    <style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+        }
+</style>
+</head>
+    
+<body>
+<h1>Welcome agent {{agent_id}}</h1>
+<h2>Upcoming Flight</h2>
+{% if results%}  
+<table>
+    <th>Customer Email</th>
+	<th>Airline Name</th>
+	<th>Flight Number</th>
+	<th>Department Airport</th>
+	<th>Department Time</th>
+	<th>Arrival Airport</th>
+	<th>Arrival Time</th>
+	<th>Price</th>
+	<th>Status</th>
+	<th>Airplane ID</th>
+
+{% for line in results %}
+	<tr>
+        <td>{{line['customer_email']}}</td>
+	    <td>{{line['airline_name']}}</td>
+	    <td>{{line['flight_num']}}</td>
+	    <td>{{line['departure_airport']}}</td>
+	    <td>{{line['departure_time']}}</td>
+	    <td>{{line['arrival_airport']}}</td>
+	    <td>{{line['arrival_time']}}</td>
+	    <td>{{line['price']}}</td>
+	    <td>{{line['status']}}</td>
+	    <td>{{line['airplane_id']}}</td>
+	</tr>
+{% endfor %}
+</table>
+{% endif %}
+    {% if error %}
+	<p class="error"><strong>Error:</strong> {{error}}</p>
+    {% endif %}
+<h2>Search for flights</h2>
+<form action="/searchFlightsAgent" method="POST">
+    <h3>Enter Search information</h3>
+    <input type="text" name="departure_airport" placeholder="departure airport" required/>
+    <input type="text" name="arrival_airport" placeholder="arrival airport" required/>
+    arrival date:
+    <input type="date" name="date" placeholder="date" required/>
+    <input type="submit" value= search />
+    
+    </form>  
+    
+</body>
+</html>

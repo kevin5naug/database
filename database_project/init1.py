@@ -167,6 +167,7 @@ def loginAuthAgent():
         #creates a session for the the user
         #session is a built in
         session['email'] = email
+        session['booking_agent_id']=get_agent_info(email)
         return redirect(url_for('booking_agent_home'))
     else:
         #returns an error message to the html page
@@ -320,6 +321,42 @@ def staff_home():
         error='No upcoming flight scheduled in 30 days'
         return render_template('staff_home.html', username=username, results=flight_info, error=error)
 
+@app.route('/booking_agent_home')
+def booking_agent_home():
+    email=session['email']
+    agent_id=session['booking_agent_id']
+    flight_info=get_agent_upflight(email)
+    error=None
+    if(flight_info):
+        return render_template('agent_home.html',agent_id=agent_id,results=flight_info,error=error)
+    else:
+        error='No upcoming flight scheduled in 30 days'
+        return render_template('agent_home.html',agent_id=agent_id,results=flight_info,error=error)
+
+@app.route('/searchFlightsAgent',mothods=['GET','POST'])
+def searchFlightsAgent():
+    d_airport=request.form['departure_airport']
+    a_airport=request.form['arrival_airport']
+    date=request.form['date']
+    cursor=conn.cursor()
+    query='''select airline_name,flight_num,departure_airport,departure_time,arrival_airport,arrival_time,price,airplane_id,(seats-count(ticket_id)) as seats_left  
+             from flight natural join airplane natural join ticket
+             where departure_airport=%s 
+                 and arrival_airport=%s
+                 and (date(arrival_time)=%s)
+             group by airline_name, flight_num
+        '''
+    cursor.execute(query,(d_airport,a_airport,date))
+    flight_info=cursor.fetchall()
+    cursor.close()
+    error=None
+    if (flight_info):
+        return render_template('agent_search_flights.html',results=flight_info,error=error)
+    else:
+        error='No flights available'
+        return render_template('agent_search_flights.html',results=flight_info,error=error)   
+
+
 @app.route('/customer_home')
 def customer_home():
         email=session['email']
@@ -339,16 +376,13 @@ def searchFlightsCustomer():
     a_airport=request.form['arrival_airport']
     date=request.form['date']
     cursor=conn.cursor()
-    
-    query='''select F.airline_name, F.flight_num, F.departure_airport, F.departure_time, F.arrival_airport, F.arrival_time, F.price, F.airplane_id, (A.seats - (select count(*) from ticket as T where T.airline_name=F.airline_name and T.flight_num=F.flight_num)) as seats_left  
-    from flight as F, airplane as A
-    where F.airline_name=A.airline_name
-    and F.airplane_id=A.airplane_id
-    and departure_airport=%s 
-    and arrival_airport=%s
-    and (date(arrival_time)=%s)
-    group by airline_name, flight_num
-    '''
+    query='''select airline_name,flight_num,departure_airport,departure_time,arrival_airport,arrival_time,price,airplane_id,(seats-count(ticket_id)) as seats_left  
+             from flight natural join airplane natural join ticket
+             where departure_airport=%s 
+                 and arrival_airport=%s
+                 and (date(arrival_time)=%s)
+             group by airline_name, flight_num
+        '''
     cursor.execute(query,(d_airport,a_airport,date))
     flight_info=cursor.fetchall()
     cursor.close()
@@ -365,7 +399,7 @@ def customer_purchase(airline_name,flight_num,seats_left):
     cursor=conn.cursor()
     message=None
     if (seats_left>0):
-        query='select IFNULL(MAX(ticket_id),0) as ticket_id from ticket'
+        query='select MAX(ticket_id) as ticket_id from ticket'
         cursor.execute(query)
         data=cursor.fetchone()
         new_id=int(data['ticket_id'])+1
@@ -396,8 +430,7 @@ def track_customer_spending():
     query='''select COALESCE(SUM(flight.price),0) as month_spend
             from ticket natural join purchases natural join flight
             where purchases.customer_email=%s
-            and (date(purchase_date) > (CURDATE()-INTERVAL %s MONTH))
-            and (date(purchase_date) <= (CURDATE()-INTERVAL %s MONTH))
+            and (date(purchase_date) between (CURDATE()-INTERVAL %s MONTH) and (CURDATE()-INTERVAL %s MONTH))
     '''
     months_data=[]
     for i in range(6,0,-1):
@@ -587,7 +620,6 @@ def universal_logout():
 
 app.secret_key = 'some key that you will never guess'
 
-
 #Utility Function
 def get_customer_upflight(email):
     cursor=conn.cursor()
@@ -667,6 +699,19 @@ def get_customer_info(email):
         print("ERROR: person doesn't exist")
         return "ERROR"
 
+def get_agent_info(email):
+    cursor=conn.cursor()
+    query='select booking_agent_id from booking_agent where email=%s'
+    cursor.execute(query,(email,))
+    info=cursor.fetchone()
+    cursor.close()
+    error=None
+    if(info):
+        return info['booking_agent_id']
+    else:
+        print("ERROR: booking agent doesn't exist")
+        return "ERROR"
+
 def get_airline_staff_info(username):
     cursor=conn.cursor()
     query='select * from airline_staff where username=%s'
@@ -679,6 +724,19 @@ def get_airline_staff_info(username):
     else:
         print("FATAL ERROR: cannot fetch attributes for this airline staff")
         return "ERROR", "ERROR", "ERROR"
+
+def get_agent_upflight(email):
+    cursor=conn.cursor()
+    query='''select customer_email, airline_name,flight_num,departure_airport,departure_time,arrival_airport,arrival_time,price,status,airplane_id
+            from purchases natural join ticket natural join flight natural join booking_agent 
+            where booking_agent.email=%s
+            and ((date(departure_time) between CURDATE() and (CURDATE()+ INTERVAL 30 DAY)) 
+    or (date(arrival_time) between CURDATE() and (CURDATE()+ INTERVAL 30 DAY)))
+        '''
+    cursor.execute(query,(email,))
+    flight_info=cursor.fetchall();
+    cursor.close()
+    return flight_info
 
 #Run the app on localhost port 5000
 #debug = True -> you don't have to restart flask
