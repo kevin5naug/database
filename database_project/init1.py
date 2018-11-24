@@ -339,13 +339,16 @@ def searchFlightsAgent():
     a_airport=request.form['arrival_airport']
     date=request.form['date']
     cursor=conn.cursor()
-    query='''select airline_name,flight_num,departure_airport,departure_time,arrival_airport,arrival_time,price,airplane_id,(seats-count(ticket_id)) as seats_left  
-             from flight natural join airplane natural join ticket
-             where departure_airport=%s 
-                 and arrival_airport=%s
-                 and (date(arrival_time)=%s)
-             group by airline_name, flight_num
-        '''
+    
+    query='''select F.airline_name, F.flight_num, F.departure_airport, F.departure_time, F.arrival_airport, F.arrival_time, F.price, F.airplane_id, (A.seats - (select count(*) from ticket as T where T.airline_name=F.airline_name and T.flight_num=F.flight_num)) as seats_left  
+    from flight as F, airplane as A
+    where F.airline_name=A.airline_name
+    and F.airplane_id=A.airplane_id
+    and departure_airport=%s 
+    and arrival_airport=%s
+    and (date(arrival_time)=%s)
+    group by airline_name, flight_num
+    '''
     cursor.execute(query,(d_airport,a_airport,date))
     flight_info=cursor.fetchall()
     cursor.close()
@@ -354,7 +357,36 @@ def searchFlightsAgent():
         return render_template('agent_search_flights.html',results=flight_info,error=error)
     else:
         error='No flights available'
-        return render_template('agent_search_flights.html',results=flight_info,error=error)   
+        return render_template('agent_search_flights.html',results=flight_info,error=error)
+
+@app.route('/agent_purchase_page/<airline_name>/<flight_num>/<int:seats_left>', methods=['GET','POST'])
+def agent_purchase_page(airline_name,flight_num,seats_left):
+    return render_template('agent_purchase_page.html',airline_name=airline_name,flight_num=flight_num,seats_left=seats_left)
+
+@app.route('/agent_purchase/<airline_name>/<flight_num>/<int:seats_left>',methods=['GET','POST'])
+def agent_purchase(airline_name,flight_num,seats_left):
+    customer_email = request.form['customer_email']
+    agent_email=session['email']
+    cursor=conn.cursor()
+    message=None
+    if (seats_left>0):
+        query='select IFNULL(MAX(ticket_id),0) as ticket_id from ticket'
+        cursor.execute(query)
+        data=cursor.fetchone()
+        new_id=int(data['ticket_id'])+1
+        query='insert into ticket values(%s, %s, %s)'
+        cursor.execute(query,(new_id, airline_name, flight_num))
+        query='insert into purchases(ticket_id,customer_email,booking_agent_id,purchase_date) values(%s, %s, %s, CURDATE())'
+        cursor.execute(query,(new_id,customer_email,agent_email))
+        conn.commit()
+        cursor.close()
+        message='Purchase Succeeds.'
+        return render_template('agent_purchase_finish.html',message=message)
+    else:
+        message='Purchase fails. There is no seat left.'
+        return render_template('agent_purchase_finish.html',message=message)
+
+
 
 @app.route('/customer_home')
 def customer_home():
