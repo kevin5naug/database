@@ -396,6 +396,8 @@ def agent_purchase(airline_name,flight_num,seats_left):
 def agent_commission():
     agent_email=session['email']
     agent_id=session['booking_agent_id']
+    start_date=request.form['start']
+    end_date=request.form['end']
     cursor=conn.cursor()
     query='''select coalesce(SUM(price),0)/10 as total_commission
             from flight natural join ticket natural join purchases
@@ -418,7 +420,44 @@ def agent_commission():
     else:
         average=total_commission/total_num
     cursor.close()
-    history_commission=check_commission(agent_id)
+    return render_template('agent_view_commission.html',total_commission=total_commission,total_num=total_num,average=average,history_commission="")
+
+@app.route('/check_commission',methods=['GET','POST'])
+def check_commission():
+    agent_email=session['email']
+    agent_id=session['booking_agent_id']
+    start_date=request.form['start']
+    end_date=request.form['end']
+    cursor=conn.cursor()
+    query='''select coalesce(SUM(price),0)/10 as total_commission
+            from flight natural join ticket natural join purchases
+            where purchases.booking_agent_id=%s
+            and (date(purchase_date) between (CURDATE()-INTERVAL 30 DAY) and CURDATE())
+            '''
+    cursor.execute(query,(agent_id,))
+    data=cursor.fetchone()
+    total_commission=int(data['total_commission'])
+    query='''select count(purchases.ticket_id) as total_num
+            from ticket natural join flight natural join purchases
+            where purchases.booking_agent_id=%s
+            and (date(purchase_date) between (CURDATE()-INTERVAL 30 DAY) and CURDATE())
+        '''
+    cursor.execute(query,(agent_id,))
+    data=cursor.fetchone()
+    total_num=int(data['total_num'])
+    if (total_num==0):
+        average=0
+    else:
+        average=total_commission/total_num
+    query='''select coalesce(SUM(price),0)/10 as total_commission
+            from flight natural join ticket natural join purchases
+            where purchases.booking_agent_id=%s
+            and (date(purchase_date) between (date(start_date)) and date(end_date))
+            '''
+    cursor.execute(query,(agent_id,))
+    data=cursor.fetchone()
+    history_commission="My history commission from "+start_date+" to "+end_date+": "+data['total_commission']
+    cursor.close()
     return render_template('agent_view_commission.html',total_commission=total_commission,total_num=total_num,average=average,history_commission=history_commission)
 
 
@@ -707,19 +746,14 @@ def staff_update_flight_status():
     where airline_name=%s
     and flight_num=%s
     '''
-    affected_row=0
     try:
         cursor.execute(query, (new_status, airline_name, flight_num))
         conn.commit()
-        affected_row=cursor.rowcount
         cursor.close()
     except Error as err:
         return render_template('staff_change_flight_status.html', username=username, message=None, error=err)
     
-    if affected_row==0:
-        return render_template('staff_change_flight_status.html', username=username, message=None, error="Operation Failure: there is no such flight")
-    else:
-        return render_template('staff_change_flight_status.html', username=username, message="Success: Flight Status Updated.", error=None)
+    return render_template('staff_change_flight_status.html', username=username, message="Success: Flight Status Updated.", error=None)
 
 @app.route('/staff_logout')
 def staff_logout():
@@ -854,24 +888,6 @@ def get_agent_upflight(email):
     flight_info=cursor.fetchall();
     cursor.close()
     return flight_info
-
-def check_commission(agent_id):
-    cursor=conn.cursor()
-    start_date=request.form['start']
-    end_date=request.form['end']
-    if(start_date):
-        query='''select coalesce(SUM(price),0)/10 as total_commission
-            from flight natural join ticket natural join purchases
-            where purchases.booking_agent_id=%s
-            and (date(purchase_date) between (date(start_date)) and date(end_date))
-            '''
-        cursor.execute(query,(agent_id,))
-        data=cursor.fetchone()
-        history_commission=int(data['total_commission'])
-        cursor.close()
-        return history_commission
-    else:
-        return 0
 
 #Run the app on localhost port 5000
 #debug = True -> you don't have to restart flask
