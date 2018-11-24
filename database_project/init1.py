@@ -303,8 +303,7 @@ def registerAirlineStaff():
 
 @app.route('/log_out')
 def log_out():
-    for item in session.keys():
-        session.pop(item)
+    session.clear()
     return   render_template('front_page.html')
 
 @app.route('/staff_home')
@@ -393,7 +392,7 @@ def agent_purchase(airline_name,flight_num,seats_left):
         message='Purchase fails. There is no seat left.'
         return render_template('agent_purchase_finish.html',message=message)
 
-@app.route('/agent_commission', method=['GET','POST'])
+@app.route('/agent_commission', methods=['GET','POST'])
 def agent_commission():
     agent_email=session['email']
     agent_id=session['booking_agent_id']
@@ -726,9 +725,9 @@ def staff_logout():
 
 @app.route('/universal_logout')
 def universal_logout():
-    for item in session.keys():
-        session.pop(item)
+    session.clear()
     return render_template('front_page.html', error='Unauthorized Access: You are forced to be logged out.')
+
 
 app.secret_key = 'some key that you will never guess'
 
