@@ -333,7 +333,7 @@ def booking_agent_home():
         error='No upcoming flight scheduled in 30 days'
         return render_template('agent_home.html',agent_id=agent_id,results=flight_info,error=error)
 
-@app.route('/searchFlightsAgent',mothods=['GET','POST'])
+@app.route('/searchFlightsAgent',methods=['GET','POST'])
 def searchFlightsAgent():
     d_airport=request.form['departure_airport']
     a_airport=request.form['arrival_airport']
@@ -369,6 +369,7 @@ def agent_purchase(airline_name,flight_num,seats_left):
     agent_email=session['email']
     cursor=conn.cursor()
     message=None
+    agent_id=session['booking_agent_id']
     if (seats_left>0):
         query='select IFNULL(MAX(ticket_id),0) as ticket_id from ticket'
         cursor.execute(query)
@@ -377,7 +378,7 @@ def agent_purchase(airline_name,flight_num,seats_left):
         query='insert into ticket values(%s, %s, %s)'
         cursor.execute(query,(new_id, airline_name, flight_num))
         query='insert into purchases(ticket_id,customer_email,booking_agent_id,purchase_date) values(%s, %s, %s, CURDATE())'
-        cursor.execute(query,(new_id,customer_email,agent_email))
+        cursor.execute(query,(new_id,customer_email,agent_id))
         conn.commit()
         cursor.close()
         message='Purchase Succeeds.'
@@ -451,32 +452,6 @@ def customer_purchase(airline_name,flight_num,seats_left):
 
     
 @app.route('/track_customer_spending')
-def track_customer_spending():
-    email=session['email']
-    cursor=conn.cursor()
-    query='''select COALESCE(SUM(flight.price),0) as spendings
-             from ticket natural join purchases natural join flight
-             where purchases.customer_email=%s 
-             and (date(purchase_date) between (CURDATE()-INTERVAl 365 DAY) and CURDATE())
-    '''
-    cursor.execute(query,(email,))
-    data=cursor.fetchone()
-    year_spending=int(data['spendings'])
-    query='''select COALESCE(SUM(flight.price),0) as month_spend
-            from ticket natural join purchases natural join flight
-            where purchases.customer_email=%s
-            and (date(purchase_date) > (CURDATE()-INTERVAL %s MONTH))
-            and (date(purchase_date) <= (CURDATE()-INTERVAL %s MONTH))
-    '''
-    months_data=[]
-    for i in range(6,0,-1):
-        cursor.execute(query,(email,i,i-1))
-        data=cursor.fetchone()
-        months_data.append(int(data['month_spend']))
-    cursor.close()
-    return render_template('customer_spending.html',year_spending=year_spending,months_data=months_data)
-
-@app.route('/customize_customer_spending')
 def track_customer_spending():
     email=session['email']
     cursor=conn.cursor()

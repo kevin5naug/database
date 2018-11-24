@@ -12,7 +12,7 @@
     <p>flight number: {{flight_num}}</p>
     <p>seats left: {{seats_left}}</p>
     </body>
-    <form action={{ url_for('agent_purchase', airline_name=airline_name, flight_num=flight_num, seats_left=seats_left}} method='POST'>
+    <form action={{ url_for('agent_purchase', airline_name=airline_name, flight_num=flight_num, seats_left=seats_left)}} method='POST'>
         <input type="text" name = "customer_email" placeholder="customer email" required/> 
      <input type="submit" value = purchase />
     </form>
