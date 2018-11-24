@@ -9,66 +9,25 @@
 	}
 </style>
 
-{% if results %}
-Upcoming Flight in 30 Days:
-<table>
-	<th>Airline Name</th>
-	<th>Flight Number</th>
-	<th>Department Airport</th>
-	<th>Department Time</th>
-	<th>Arrival Airport</th>
-	<th>Arrival Time</th>
-	<th>Price</th>
-	<th>Status</th>
-	<th>Airplane ID</th>
-{% for line in results %}
-	<tr>
-	    <td>{{line['airline_name']}}</td>
-	    <td>{{line['flight_num']}}</td>
-	    <td>{{line['departure_airport']}}</td>
-	    <td>{{line['departure_time']}}</td>
-	    <td>{{line['arrival_airport']}}</td>
-	    <td>{{line['arrival_time']}}</td>
-	    <td>{{line['price']}}</td>
-	    <td>{{line['status']}}</td>
-	    <td>{{line['airplane_id']}}</td>
-	</tr>
-{% endfor %}
-</table>
-{% else %}
-No Upcoming Flight in 30 Days
-{% endif %}
-
-<form action="/staff_add_flight" method="POST">
+<form action="/staff_update_flight_status" method="POST">
 	Flight Number: 
-	<input type="number" name="flight_num" min="0" max="99999999999" required/></br>
-	Departure Airport:
-	<input type='text' name='departure_airport' required/></br>
-	Departure Time:
-	<input type="datetime-local" name="departure_time" required/></br>
-	Arrival Airport:
-	<input type='text' name='arrival_airport' required/></br>
-	Arrival Time:
-	<input type='datetime-local' name='arrival_time' required/></br>
-	Price:
-	<input type='number' name='price' min='0' max='9999999999' required/></br>
-	Status:
-	<input type='text' name='status' required/></br>
-	Airplane ID:
-	<input type='number' name='airplane_id' min='0' max='99999999999' required/></br>
-	<input type="submit" value="add this flight" />
+	<input type="number" name="flight_num" min="0" max="999999999999" required/></br>
+	New Flight Status:
+	<input type="text" name="flight_status" required/></br>
+	<input type="submit" name="update status" /></br>
 </form>
+
+{% if message %}
+	<p>{{message}}</p>	
+{% endif %}
 
 {% if error %}
 	<p class="error"><strong>Error:</strong> {{error}}</p>
 {% endif %}
-</br>
-{% if message %}
-	<p>{{message}}</p>
-{% endif %}
-</br>
-<a href='/staff_home'>Go Back to Your Home Page</a></br>
-<a href="/staff_logout">Logout</a></br>
+
+<a href='staff_home'>Go Back to Your Home Page</a></br>
+<a href="/staff_logout">Logout Your Staff Account</a></br>
 </body>
+
 
 </html>
