@@ -475,9 +475,9 @@ def top_tickets():
     i=0
     top5s = [("Vacant",0),("Vacant",0),("Vacant",0),("Vacant",0),("Vacant",0)]
     if(data):
-        for the_key, the_value in data.items():
+        for item in data:
             if(i<5):
-                top5s[i]=(the_key,int(the_value))
+                top5s[i]=(item['email'], int(item['ticket_num']))
                 i=i+1
             else:
                 break
