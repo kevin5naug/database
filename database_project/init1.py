@@ -458,6 +458,31 @@ def check_commission():
     cursor.close()
     return render_template('agent_view_commission.html',total_commission=total_commission,total_num=total_num,average=average,history_commission=history_commission)
 
+@app.route('/top_tickets')
+def top_tickets():
+    email=session['email']
+    agent_id=session['booking_agent_id']
+    cursor=conn.cursor()
+    query='''select customer.email AS email, count(purchases.ticket_id) AS ticket_num
+            from customer
+            left join purchases on customer.email=purchases.customer_email
+            where purchases.booking_agent_id=%s
+            group by customer.email 
+            ORDER BY ticket_num DESC
+        '''
+    cursor.execute(query,(agent_id,))
+    data=cursor.fetchall()
+    i=0
+    top5s = [("Vacant",0),("Vacant",0),("Vacant",0),("Vacant",0),("Vacant",0)]
+    if(data):
+        for the_key, the_value in data.items():
+            if(i<5):
+                top5s[i]=(the_key,int(the_value))
+                i=i+1
+            else:
+                break
+    cursor.close()
+    return render_template('agent_tops.html',top5s=top5s)
 
 @app.route('/customer_home')
 def customer_home():
