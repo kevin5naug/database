@@ -1,0 +1,35 @@
+<html>
+<head>
+</head>
+<body>
+<h1>Welcome Staff {{username}}</h1>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<form action="/staff_insert_airplane" method="POST">
+	Airline Name: 
+	<input type="text" name="airline_name" required/></br>
+	Airplane ID:
+	<input type="int" name="airplane_id" min='0' max='99999999999'  required/></br>
+	Seats:
+	<input type="int" name="seats" min='0' max='99999999999' required/></br>
+	<input type="submit" name="add this airplane" /></br>
+</form>
+
+{% if message %}
+	<p>{{message}}</p>	
+{% endif %}
+
+{% if error %}
+	<p class="error"><strong>Error:</strong> {{error}}</p>
+{% endif %}
+
+<a href='staff_home'>Go Back to Your Home Page</a></br>
+<a href="/staff_logout">Logout Your Staff Account</a></br>
+</body>
+
+
+</html>
