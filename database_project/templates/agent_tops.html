@@ -1,6 +1,7 @@
 <!DOCTYPE HTML>
 <html>
-<head>  
+<head> 
+    <title>My top customers</title>
 <script>
 window.onload = function () {
 var chart = new CanvasJS.Chart("chartContainer", {
@@ -25,12 +26,35 @@ var chart = new CanvasJS.Chart("chartContainer", {
 	}]
 });
 chart.render();
-
+var chart2 = new CanvasJS.Chart("chartContainer2", {
+	animationEnabled: true,
+	theme: "light2", // "light1", "light2", "dark1", "dark2"
+	title:{
+		text: "Top Commissions"
+	},
+	axisY: {
+		title: "Commissions"
+	},
+	data: [{        
+		type: "column",  
+		showInLegend: false, 
+		dataPoints: [      
+		    { y: parseInt("{{top5commission[0][1]}}"), label: "{{top5commission[0][0]}}" },
+			{ y: parseInt("{{top5commission[1][1]}}"),  label:"{{top5commission[1][0]}}"},
+			{ y: parseInt("{{top5commission[2][1]}}"),  label: "{{top5commission[2][0]}}" },
+			{ y: parseInt("{{top5commission[3][1]}}"),  label: "{{top5commission[3][0]}}" },
+			{ y: parseInt("{{top5commission[4][1]}}"),  label: "{{top5commission[4][0]}}" }
+		]
+	}]
+});
+chart2.render();
 }
 </script>
 </head>
 <body>
 <div id="chartContainer" style="height: 300px; width: 100%;"></div>
+<div id="chartContainer2" style="height: 300px; width: 100%;"></div>
 <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+<h3><a href='/booking_agent_home'>Return home</a></h3>
 </body>
 </html>

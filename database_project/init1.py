@@ -466,7 +466,7 @@ def top_tickets():
     query='''select customer.email AS email, count(purchases.ticket_id) AS ticket_num
             from customer
             left join purchases on customer.email=purchases.customer_email
-            where purchases.booking_agent_id=%s
+            where purchases.booking_agent_id=%s and (date(purchases.purchase_date) between (CURDATE() - INTERVAL 6 MONTH) AND CURDATE())
             group by customer.email 
             ORDER BY ticket_num DESC
         '''
@@ -481,8 +481,27 @@ def top_tickets():
                 i=i+1
             else:
                 break
+
+    query='''select customer.email AS email, coalesce(sum(price)/10,0) as total_commission
+            from customer
+            left join (purchases natural join ticket natural join flight) on customer.email=purchases.customer_email 
+            where purchases.booking_agent_id=%s and (date(purchases.purchase_date) between (CURDATE() - INTERVAL 1 YEAR) AND CURDATE())
+            group by purchases.email
+            order by total_commission DESC
+    '''
+    cursor.execute(query,(agent_id,))
+    data=cursor.fetchall()
+    i=0
+    top5commission = [("Vacant",0),("Vacant",0),("Vacant",0),("Vacant",0),("Vacant",0)]
+    if(data):
+        for item in data:
+            if(i<5):
+                top5commission[i]=(item['email'], int(item['total_commission']))
+                i=i+1
+            else:
+                break
     cursor.close()
-    return render_template('agent_tops.html',top5s=top5s)
+    return render_template('agent_tops.html',top5s=top5s,top5commission=top5commission)
 
 @app.route('/customer_home')
 def customer_home():
