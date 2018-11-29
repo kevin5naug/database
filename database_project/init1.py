@@ -486,7 +486,7 @@ def top_tickets():
             from customer
             left join (purchases natural join ticket natural join flight) on customer.email=purchases.customer_email 
             where purchases.booking_agent_id=%s and (date(purchases.purchase_date) between (CURDATE() - INTERVAL 1 YEAR) AND CURDATE())
-            group by purchases.email
+            group by customer.email
             order by total_commission DESC
     '''
     cursor.execute(query,(agent_id,))
