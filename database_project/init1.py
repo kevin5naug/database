@@ -1,7 +1,7 @@
 #Import Flask Library
 from flask import Flask, Markup, render_template, request, session, url_for, redirect
 import pymysql.cursors
-
+import MySQLdb
 #Initialize the app from Flask
 app = Flask(__name__)
 
@@ -486,7 +486,7 @@ def top_tickets():
             from customer
             left join (purchases natural join ticket natural join flight) on customer.email=purchases.customer_email 
             where purchases.booking_agent_id=%s and (date(purchases.purchase_date) between (CURDATE() - INTERVAL 1 YEAR) AND CURDATE())
-            group by purchases.email
+            group by customer.email
             order by total_commission DESC
     '''
     cursor.execute(query,(agent_id,))
@@ -825,8 +825,8 @@ def staff_update_flight_status():
         cursor.execute(query, (new_status, airline_name, flight_num))
         conn.commit()
         cursor.close()
-    except Error as err:
-        return render_template('staff_change_flight_status.html', username=username, message=None, error=err)
+    except Exception as e:
+        return render_template('staff_change_flight_status.html', username=username, message=None, error=e)
     
     return render_template('staff_change_flight_status.html', username=username, message="Success: Flight Status Updated.", error=None)
 
@@ -841,6 +841,30 @@ def staff_add_airplane_in_system():
     message=None
     error=None
     return render_template('staff_add_airplane_in_system.html', username=username, message=None, error=None)
+
+@app.route('/staff_insert_airplane', methods=['GET', 'POST'])
+def staff_insert_airplane():
+
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+
+    username=session['username']
+    airline_name=request.form['airline_name']
+    airplane_id=request.form['airplane_id']
+    seats=request.form['seats']
+    message=None
+    error=None
+    query='''insert into airplane values(%s, %s, %s)'''
+    cursor=conn.cursor()
+    try:
+        cursor.execute(query, (airline_name, airplane_id, seats))
+        conn.commit()
+        cursor.close()
+    except Exception as e:
+        return render_template('staff_add_airplane_in_system.html', username=username, message=None, error=e)
+    message="Success: the airplane has been added to the system."
+    return render_template('staff_add_airplane_in_system.html', username=username, message=message, error=None)
 
 @app.route('/staff_logout')
 def staff_logout():
