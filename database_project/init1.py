@@ -610,19 +610,19 @@ def rangeSpending():
     cursor.execute(query,(email,start_date,end_date))
     data=cursor.fetchone()
     range_spending=int(data['spendings'])
-    query='''select DATE_FORMAT(purchase_date,'%Y-%m') AS Year_Month, COALESCE(SUM(flight.price),0) as spendings 
+    query='''select DATE_FORMAT(purchase_date, '%%m-%%Y') as y_m, COALESCE(SUM(price),0) as spendings 
             from ticket natural join purchases natural join flight
             where purchases.customer_email=%s
             and (date(purchase_date) >= date(%s))
             and (date(purchase_date) <= date(%s))
-            GROUP BY Year_Month
+            GROUP BY DATE_FORMAT(purchase_date, '%%m-%%Y')
         '''
     cursor.execute(query,(email,start_date,end_date))
     data=cursor.fetchall()
     labels=[]
     values=[]
     for item in data:
-        labels.append(item['Year_Month'])
+        labels.append(item['y_m'])
         values.append(int(item['spendings']))
     upperbound=max(values)
     return render_template('customer_spending_custom.html',s_date=start_date,e_date=end_date,max=upperbound,range_spending=range_spending,labels=labels,values=values)
