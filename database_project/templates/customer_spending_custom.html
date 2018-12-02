@@ -10,7 +10,7 @@
 </head>
 <body>
 <div>
-<h2>My total spendings last 365 days: {{year_spending}}</h2>    
+<h2>My total spendings from {{s_date}} to {{e_date}}: {{range_spending}}</h2>    
 <h2>Monthwise Spending Chart</h2><!-- bar chart canvas element -->
 <canvas id="chart" width="600" height="400"></canvas>
 <script>
@@ -50,14 +50,6 @@ max = {{max}}
    }
  );
 </script>
-</div>
-<div>
-<form action="/rangeSpending" method="POST">
-    <h3>Track spendings between following dates:</h3>
-    <input type="date" name="start_date" placeholder="date" required/>
-    <input type="date" name="end_date" placeholder="date" required/>
-    <input type="submit" value= search />
-    </form>
 </div>
 <div>
     <h3><a href='/customer_home'>Return Home</a></h3>
