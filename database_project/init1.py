@@ -866,6 +866,7 @@ def staff_insert_airplane():
     message="Success: the airplane has been added to the system."
     return render_template('staff_add_airplane_in_system.html', username=username, message=message, error=None)
 
+
 @app.route('/staff_logout')
 def staff_logout():
     session.pop('username')

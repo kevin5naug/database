@@ -1,0 +1,43 @@
+1.
+(a) 
+Node A is accessed first. 66 is larger than 40, the only key stored in node A. Hence, we access Node C next. 
+We find 66 larger than 48,62 and smaller than 74. Hence, we access Node J next.
+We find 66 larger than 62,64 first. Then we find 66 is stored in node J. This is a leaf node. We access the pointer of 66 to find the record we want.
+
+(b)
+Node A is accessed first. 18<40. Hence, we access Node B next.
+We find 18 larger than 10 first. Then we find 18 is stored in node B. Hence, we access node F next. 
+We find 18 is stored in node F. This is a leaf node. We access the pointer of 18 to find the record we want.
+
+(c)
+Node A is accessed first. Since 15<40 and 35<40, we search node B next.
+We find 10<15<18 and 32<35. Hence, we search node E, F, G next.
+When we search node E, we find 14<15<16<35. This is a leaf node. We access the pointer of 16 to find the record we want.
+When we search node F, we find 15<18<20<22<24<26<28<30<35. This is a leaf node. We access the pointers of all values stored in node F to find the records we want.
+When we search node G, we find 15<32<34<35<36. This is a leaf node. We access the pointers of 32,34 to find the records we want.
+
+2.
+(a) 
+Insert 15 into node E between value 14 and 16.
+
+(b)
+Split node F into F and F'. Node F has value 18,20,22,24. Node F' has value 26,27,28,30.
+Insert 26 into node B between value 18 and 32.
+
+(c)
+Split node I into I and I'. Node I has value 48.49,50,52. Node I' has value 54,56,58,60.
+Split node C into C and C'. Node C has value 48,54,62,74. Node C' has value 82,100,200,300.
+Insert 82 into node A after 40.
+
+3.
+(a)
+Delete 54 from node I.
+
+(b)
+Delete 20 from node F.
+
+(c)
+Delete 6 from node D. Merge node D and E into node D'. Node D' has value 2,4,8,10,12,14,16. Let Node D' be the child of node B.
+Delete 10 from node B. Insert 40 into node B after 32. Let node H be the child of node B after 40.
+Delete 40 from node A. Insert 48 into node A.
+Delete 48 from node C. Move all values in node C to the left. Update the corresponding children pointers.
