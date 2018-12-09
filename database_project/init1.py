@@ -2,6 +2,7 @@
 from flask import Flask, Markup, render_template, request, session, url_for, redirect
 import pymysql.cursors
 import MySQLdb
+import hashlib
 #Initialize the app from Flask
 app = Flask(__name__)
 
@@ -124,7 +125,7 @@ def loginAuthCustomer():
     #grabs information from the forms
     email = request.form['email']
     password = request.form['password']
-
+    password = hashlib.md5(password.encode('utf-8')).hexdigest()
     #cursor used to send queries
     cursor = conn.cursor()
     #executes query
@@ -152,7 +153,7 @@ def loginAuthAgent():
     #grabs information from the forms
     email = request.form['email']
     password = request.form['password']
-
+    password = hashlib.md5(password.encode('utf-8')).hexdigest()
     #cursor used to send queries
     cursor = conn.cursor()
     #executes query
@@ -180,7 +181,7 @@ def loginAuthStaff():
     #grabs information from the forms
     username = request.form['username']
     password = request.form['password']
-
+    password = hashlib.md5(password.encode('utf-8')).hexdigest()
     #cursor used to send queries
     cursor = conn.cursor()
     #executes query
@@ -212,6 +213,7 @@ def registerCustomer():
     email=request.form['email']
     name=request.form['name']
     password=request.form['password']
+    password = hashlib.md5(password.encode('utf-8')).hexdigest()
     building_number=request.form['building_number']
     street=request.form['street']
     city=request.form['city']
@@ -248,7 +250,7 @@ def registerBookingAgent():
     #grabs information from the forms
     email=request.form['email']
     password=request.form['password']
-    booking_agent_id=request.form['booking_agent_id']
+    password = hashlib.md5(password.encode('utf-8')).hexdigest()
 
     #cursor used to send queries
     cursor = conn.cursor()
@@ -264,6 +266,10 @@ def registerBookingAgent():
         error = "This email address has already been registered by a booking agent"
         return render_template('register.html', error = error)
     else:
+        query='select IFNULL(MAX(booking_agent_id),0) as booking_agent_id from booking_agent'
+        cursor.execute(query)
+        data=cursor.fetchone()
+        booking_agent_id=int(data['booking_agent_id'])+1
         ins = 'INSERT INTO booking_agent VALUES(%s, %s, %s)'
         cursor.execute(ins, (email, password, booking_agent_id))
         conn.commit()
@@ -276,6 +282,7 @@ def registerAirlineStaff():
     #grabs information from the forms
     email=request.form['username']
     password=request.form['password']
+    password = hashlib.md5(password.encode('utf-8')).hexdigest()
     first_name=request.form['first_name']
     last_name=request.form['last_name']
     date_of_birth=request.form['date_of_birth']
@@ -296,9 +303,12 @@ def registerAirlineStaff():
         return render_template('register.html', error = error)
     else:
         ins = 'INSERT INTO airline_staff VALUES(%s, %s, %s, %s, %s, %s)'
-        cursor.execute(ins, (email, password, first_name, last_name, date_of_birth, airline_name))
-        conn.commit()
-        cursor.close()
+        try:
+            cursor.execute(ins, (email, password, first_name, last_name, date_of_birth, airline_name))
+            conn.commit()
+            cursor.close()
+        except Exception as e:
+            return render_template('register.html', error=e)
         return render_template('front_page.html')
 
 @app.route('/log_out')
@@ -353,6 +363,7 @@ def searchFlightsAgent():
     and arrival_airport=%s
     and (date(arrival_time)=%s)
     group by airline_name, flight_num
+    having seats_left>0
     '''
     cursor.execute(query,(d_airport,a_airport,date))
     flight_info=cursor.fetchall()
@@ -374,6 +385,14 @@ def agent_purchase(airline_name,flight_num,seats_left):
     agent_email=session['email']
     cursor=conn.cursor()
     message=None
+    query='''select *
+    from customer
+    where email=%s
+    '''
+    cursor.execute(query, (customer_email,))
+    data=cursor.fetchone()
+    if (not data):
+        return render_template('agent_purchase_finish.html', message='Purchase fails. Customer email address not registered.')
     agent_id=session['booking_agent_id']
     if (seats_left>0):
         query='select IFNULL(MAX(ticket_id),0) as ticket_id from ticket'
@@ -518,21 +537,40 @@ def customer_home():
 
 @app.route('/searchFlightsCustomer', methods=['GET', 'POST'])
 def searchFlightsCustomer():
-    d_airport=request.form['departure_airport']
-    a_airport=request.form['arrival_airport']
-    date=request.form['date']
+    source_city = request.form['source_city']
+    source_airport = request.form['source_airport']
+    destination_city = request.form['destination_city']
+    destination_airport = request.form['destination_airport']
+    date=request.form['date'] #required
+
+    #deal with NULL type
+    if(source_city is None):
+        source_city = ""
+    if(source_airport is None):
+        source_airport = ""
+    if(destination_city is None):
+        destination_city = ""
+    if(destination_airport is None):
+        destination_airport = ""
+
+    source_city="%"+source_city+"%"
+    source_airport="%"+source_airport+"%"
+    destination_city="%"+destination_city+"%"
+    destination_airport="%"+destination_airport+"%"
     cursor=conn.cursor()
     
-    query='''select F.airline_name, F.flight_num, F.departure_airport, F.departure_time, F.arrival_airport, F.arrival_time, F.price, F.airplane_id, (A.seats - (select count(*) from ticket as T where T.airline_name=F.airline_name and T.flight_num=F.flight_num)) as seats_left  
-    from flight as F, airplane as A
-    where F.airline_name=A.airline_name
-    and F.airplane_id=A.airplane_id
-    and departure_airport=%s 
-    and arrival_airport=%s
-    and (date(arrival_time)=%s)
-    group by airline_name, flight_num
-    '''
-    cursor.execute(query,(d_airport,a_airport,date))
+    query='''select F.airline_name, F.flight_num, F.departure_airport, F.departure_time, F.arrival_airport, F.arrival_time, F.price, F.airplane_id, (AI.seats - (select count(*) from ticket as T where T.airline_name=F.airline_name and T.flight_num=F.flight_num)) as seats_left
+    from flight as F, airport as D, airport as A, airplane as AI
+    where F.departure_airport like %s
+    and F.arrival_airport like %s
+    and F.departure_airport=D.airport_name
+    and D.airport_city like %s
+    and F.arrival_airport=A.airport_name
+    and A.airport_city like %s
+    and F.airplane_id=AI.airplane_id
+    and ((date(F.arrival_time)=%s)
+    or (date(F.departure_time)=%s))'''
+    cursor.execute(query, (source_airport, destination_airport, source_city, destination_city, date, date))
     flight_info=cursor.fetchall()
     cursor.close()
     error=None
@@ -783,13 +821,16 @@ def staff_add_flight():
         error='Sorry. A flight has already used this flight number. Operation Failed.'
         return render_template('staff_create_flight.html', username=username, results=results, error=error, message=None)
     else:
-        success=staff_insert_new_flight(airline_name, flight_num, departure_airport, departure_time, arrival_airport, arrival_time, price, status, airplane_id)
-        if success:
-            results=staff_get_future_flight_info(airline_name)
-            return render_template('staff_create_flight.html', username=username, results=results, error=None, message="Success: the flight has been added to the system")
-        else:
-            error='Fail: please provide flight information that is consistent with the current system'
-            return render_template('staff_create_flight.html', username=username, results=results, error=error, message=None)
+        cursor=conn.cursor()
+        ins='insert into flight values(%s, %s, %s, %s, %s, %s, %s, %s, %s)'
+        try:
+            cursor.execute(ins, (airline_name, flight_num, departure_airport, departure_time, arrival_airport, arrival_time, price, status, airplane_id))
+            conn.commit()
+            cursor.close()
+        except Exception as e:
+            return render_template('staff_create_flight.html', username=username, results=None, error=e, message=None)
+        results=staff_get_future_flight_info(airline_name)
+        return render_template('staff_create_flight.html', username=username, results=results, error=None, message="Success: the flight has been added to the system")
 
 @app.route('/staff_change_flight_status')
 def staff_change_flight_status():
@@ -816,6 +857,16 @@ def staff_update_flight_status():
     new_status=request.form['flight_status']
 
     cursor=conn.cursor()
+    query='''select * 
+    from flight
+    where airline_name=%s
+    and flight_num=%s
+    '''
+    cursor.execute(query, (airline_name, flight_num))
+    data=cursor.fetchone()
+    if(not data):
+        return render_template('staff_change_flight_status.html', username=username, message=None, error="Failure: No such flight found.")
+
     query='''update flight 
     set status=%s
     where airline_name=%s
@@ -850,8 +901,7 @@ def staff_insert_airplane():
         return redirect(url_for('universal_logout'))
 
     username=session['username']
-    airline_name=request.form['airline_name']
-    #TODO: airline name must match
+    airline_name=session['airline_name']
     airplane_id=request.form['airplane_id']
     seats=request.form['seats']
     message=None
@@ -1237,17 +1287,6 @@ def get_customer_upflight(email):
     flight_info=cursor.fetchall();
     cursor.close()
     return flight_info
-
-def staff_insert_new_flight(airline_name, flight_num, departure_airport, departure_time, arrival_airport, arrival_time, price, status, airplane_id):
-    cursor=conn.cursor()
-    
-    #TODO: sanitize Input
-
-    ins='insert into flight values(%s, %s, %s, %s, %s, %s, %s, %s, %s)'
-    cursor.execute(ins, (airline_name, flight_num, departure_airport, departure_time, arrival_airport, arrival_time, price, status, airplane_id))
-    conn.commit()
-    cursor.close()
-    return True
 
 def staff_get_future_flight_info(airline_name):
     cursor=conn.cursor()
