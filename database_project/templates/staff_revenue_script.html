@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="utf-8" />
+   <title>Chart.js </title>
+ 
+   <!-- import plugin script -->
+   <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js'></script>
+ 
+</head>
+<body>
+<div>
+<h2>Revenue Analysis</h2><!-- bar chart canvas element -->
+<h2>Revenue Income Last Month</h2>
+<canvas id="chart" width="600" height="400"></canvas>
+</br>
+<h2>Revenue Income Last Year</h2>
+<canvas id="chart1" width="600" height="400"></canvas>
+<script>
+      var pieData = [
+        {% for item, label, colors in set1 %}
+          {
+            value: "{{item}}",
+            label: "{{label}}",
+            color : "{{colors}}"
+          },
+        {% endfor %}
+      ];
+      
+      var pieData1 = [
+        {% for item, label, colors in set2 %}
+          {
+            value: "{{item}}",
+            label: "{{label}}",
+            color : "{{colors}}"
+          },
+        {% endfor %}
+      ];
+      new Chart(document.getElementById("chart").getContext("2d")).Pie(pieData);
+      new Chart(document.getElementById("chart1").getContext("2d")).Pie(pieData1);
+    </script>
+</div>
+<div>
+    <h3><a href='/staff_home'>Go Back to Your Home Page</a></h3>
+    </div>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE HTML>
+<html>
+<head> 
+    <title>Top Destinations</title>
+<script>
+window.onload = function () {
+var chart = new CanvasJS.Chart("chartContainer", {
+	animationEnabled: true,
+	theme: "light2", // "light1", "light2", "dark1", "dark2"
+	title:{
+		text: "Top destinations based on ticket sales over last 3 months"
+	},
+	axisY: {
+		title: "Total Tickets Sales"
+	},
+	data: [{        
+		type: "column",  
+		showInLegend: false, 
+		dataPoints: [      
+		    { y: parseInt("{{top3[0][1]}}"), label: "{{top3[0][0]}}" },
+			{ y: parseInt("{{top3[1][1]}}"),  label:"{{top3[1][0]}}"},
+			{ y: parseInt("{{top3[2][1]}}"),  label: "{{top3[2][0]}}" },
+		]
+	}]
+});
+chart.render();
+var chart1 = new CanvasJS.Chart("chartContaineri1", {
+	animationEnabled: true,
+	theme: "light2", // "light1", "light2", "dark1", "dark2"
+	title:{
+		text: "Top destinations based on ticket sales over last year"
+	},
+	axisY: {
+		title: "Total Ticket Sales"
+	},
+	data: [{        
+		type: "column",  
+		showInLegend: false, 
+		dataPoints: [      
+		    { y: parseInt("{{top3year[0][1]}}"), label: "{{top3year[0][0]}}" },
+			{ y: parseInt("{{top3year[1][1]}}"),  label:"{{top3year[1][0]}}"},
+			{ y: parseInt("{{top3year[2][1]}}"),  label: "{{top3year[2][0]}}" },
+		]
+	}]
+});
+chart1.render();
+}
+</script>
+</head>
+<body>
+<div id="chartContainer" style="height: 300px; width: 100%;"></div>
+<div id="chartContainer1" style="height: 300px; width: 100%;"></div>
+<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+<h3><a href='/staff_home'>Go Back to Your Home Page</a></h3>
+<h3><a href='/staff_logout'>Logout Your Staff Account</a></h3>
+</body>
+</html>

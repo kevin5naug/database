@@ -1103,6 +1103,111 @@ def staff_view_report_custom():
     upperbound=max(values)
     return render_template('staff_view_report_custom.html', s_date=start_date, e_date=end_date, max=upperbound, range_sales=range_ticket_sales, labels=labels, values=values)
 
+@app.route('/staff_revenue')
+def staff_revenue():
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    airline_name=session['airline_name']
+    cursor=conn.cursor()
+    query='''select COALESCE(SUM(flight.price),0) as revenue
+    from ticket natural join purchases natural join flight
+    where purchases.booking_agent_id is null
+    and flight.airline_name=%s
+    and (date(purchase_date) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
+    '''
+    cursor.execute(query,(airline_name,))
+    data=cursor.fetchone()
+    direct_sales_year=int(data['revenue'])
+    query='''select COALESCE(SUM(flight.price),0)/10*9 as revenue
+    from ticket natural join purchases natural join flight
+    where purchases.booking_agent_id is not null
+    and flight.airline_name=%s
+    and (date(purchase_date) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
+    '''
+    cursor.execute(query,(airline_name,))
+    data=cursor.fetchone()
+    indirect_sales_year=int(data['revenue'])
+    query='''select COALESCE(SUM(flight.price),0) as revenue
+    from ticket natural join purchases natural join flight
+    where purchases.booking_agent_id is null
+    and flight.airline_name=%s
+    and (date(purchase_date) between (CURDATE()-INTERVAL 1 Month) and CURDATE())
+    '''
+    cursor.execute(query,(airline_name))
+    data=cursor.fetchone()
+    direct_sales_month=int(data['revenue'])
+    query='''select COALESCE(SUM(flight.price),0)/10*9 as revenue
+    from ticket natural join purchases natural join flight
+    where purchases.booking_agent_id is not null
+    and flight.airline_name=%s
+    and (date(purchase_date) between (CURDATE()-INTERVAL 1 Month) and CURDATE())
+    '''
+    cursor.execute(query,(airline_name,))
+    data=cursor.fetchone()
+    indirect_sales_month=int(data['revenue'])
+    cursor.close()
+    labels=['direct_sales', 'indirect_sales']
+    values_year=[direct_sales_year, indirect_sales_year]
+    values_month=[direct_sales_month, indirect_sales_month]
+    colors=["#F7464A", "#46BFBD"]
+    print(values_year, values_month)
+    return render_template('staff_revenue_script.html', set1=zip(values_month, labels, colors), set2=zip(values_year, labels, colors))
+
+@app.route('/staff_view_top_destinations')
+def staff_view_top_destinations():
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    airline_name=session['airline_name']
+    cursor=conn.cursor()
+    query='''select A.airport_city as destination, count(T.ticket_id) as visit_num
+    from purchases as P, ticket as T, flight as F, airport as A
+    where P.ticket_id=T.ticket_id
+    and (date(P.purchase_date) between (CURDATE()-INTERVAL 3 Month) and CURDATE())
+    and T.airline_name=F.airline_name
+    and T.airline_name=%s
+    and T.flight_num=F.flight_num
+    and F.arrival_airport=A.airport_name
+    group by destination
+    order by visit_num desc
+    '''
+    cursor.execute(query,(airline_name,))
+    data=cursor.fetchall()
+    i=0
+    top3=[("vacant",0), ("Vacant",0), ("vacant",0)]
+    if(data):
+        for item in data:
+            if(i<3):
+                top3[i]=(item['destination'], item['visit_num'])
+                i=i+1
+            else:
+                break
+    query='''select A.airport_city as destination, count(T.ticket_id) as visit_num
+    from purchases as P, ticket as T, flight as F, airport as A
+    where P.ticket_id=T.ticket_id
+    and (date(P.purchase_date) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
+    and T.airline_name=F.airline_name
+    and T.airline_name=%s
+    and T.flight_num=F.flight_num
+    and F.arrival_airport=A.airport_name
+    group by destination
+    order by visit_num desc
+    '''
+    cursor.execute(query,(airline_name,))
+    data=cursor.fetchall()
+    i=0
+    top3_year=[("vacant",0), ("Vacant",0), ("vacant",0)]
+    if(data):
+        for item in data:
+            if(i<3):
+                top3_year[i]=(item['destination'], item['visit_num'])
+                i=i+1
+            else:
+                break
+    cursor.close()
+    return render_template('staff_view_top_destinations.html', top3=top3, top3year=top3_year)
+
 @app.route('/staff_logout')
 def staff_logout():
     session.pop('username')
