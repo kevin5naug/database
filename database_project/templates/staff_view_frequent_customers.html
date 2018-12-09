@@ -1,0 +1,65 @@
+<html>
+<head>
+</head>
+<body>
+<h1>Welcome Staff {{username}}</h1>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+{% if results %}
+Upcoming Flight in 30 Days:
+<table>
+	<th>Customer email</th>
+	<th>Total Travel Number</th>
+	<tr>
+	    <td>{{results['email']}}</td>
+	    <td>{{results['travel_num']}}</td>
+	</tr>
+</table>
+{% else %}
+No customer at the moment.
+{% endif %}
+
+<form action="/staff_list_customer_flights" method="POST">
+	Customer Email:
+	<input type='text' name='email' required/></br>
+	<input type="submit" value="list all flights taken by this customer" />
+</form>
+
+{% if error %}
+	<p class="error"><strong>Error:</strong> {{error}}</p>
+{% endif %}
+
+</br>
+{% if flight_info %}
+Flights taken by this customer last year:
+<table>
+	<th>Flight Number</th>
+	<th>Departure Airport</th>
+	<th>Departure Time</th>
+	<th>Arrival Airport</th>
+	<th>Arrival Time</th>
+{% for line in flight_info %}
+	<tr>
+	    <td>{{line['flight_num']}}</td>
+	    <td>{{line['departure_airport']}}</td>
+	    <td>{{line['departure_time']}}</td>
+	    <td>{{line['arrival_airport']}}</td>
+	    <td>{{line['arrival_time']}}</td>
+	</tr>
+{% endfor %}
+</table>
+{% else %}
+{% if searching %}
+	No flight records found.
+{% endif %}
+{% endif %}
+</br>
+<a href='/staff_home'>Go Back to Your Home Page</a></br>
+<a href="/staff_logout">Logout</a></br>
+</body>
+
+</html>

@@ -1,0 +1,33 @@
+<html>
+<head>
+</head>
+<body>
+<h1>Welcome Staff {{username}}</h1>
+<style type="text/css">
+	table, th, td{
+		border: 1px solid black;
+	}
+</style>
+
+<form action="/staff_insert_airport" method="POST">
+	Airport Name: 
+	<input type="text" name="airport_name" required/></br>
+	Airport City:
+	<input type="text" name="airport_city" required/></br>
+	<input type="submit" name="add this airport" /></br>
+</form>
+
+{% if message %}
+	<p>{{message}}</p>	
+{% endif %}
+
+{% if error %}
+	<p class="error"><strong>Error:</strong> {{error}}</p>
+{% endif %}
+
+<a href='/staff_home'>Go Back to Your Home Page</a></br>
+<a href="/staff_logout">Logout Your Staff Account</a></br>
+</body>
+
+
+</html>

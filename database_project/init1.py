@@ -851,6 +851,7 @@ def staff_insert_airplane():
 
     username=session['username']
     airline_name=request.form['airline_name']
+    #TODO: airline name must match
     airplane_id=request.form['airplane_id']
     seats=request.form['seats']
     message=None
@@ -866,6 +867,241 @@ def staff_insert_airplane():
     message="Success: the airplane has been added to the system."
     return render_template('staff_add_airplane_in_system.html', username=username, message=message, error=None)
 
+
+@app.route('/staff_add_airport')
+def staff_add_airport():
+
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+
+    username=session['username']
+    message=None
+    error=None
+    return render_template('staff_add_airport.html', username=username, message=None, error=None)
+
+@app.route('/staff_insert_airport', methods=['GET', 'POST'])
+def staff_insert_airport():
+
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+
+    username=session['username']
+    airport_name=request.form['airport_name']
+    airport_city=request.form['airport_city']
+    message=None
+    error=None
+    query='''insert into airport values(%s, %s)'''
+    cursor=conn.cursor()
+    try:
+        cursor.execute(query, (airport_name, airport_city))
+        conn.commit()
+        cursor.close()
+    except Exception as e:
+        return render_template('staff_add_airport.html', username=username, message=None, error=e)
+    message="Success: this airport has been added to the system."
+    return render_template('staff_add_airport.html', username=username, message=message, error=None)
+
+@app.route('/staff_view_top_booking_agents')
+def staff_view_top_booking_agents():
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+ 
+    airline_name=session['airline_name']
+    cursor=conn.cursor()
+    query='''select B.email as email, count(P.ticket_id) as ticket_sales
+    from booking_agent as B, purchases as P, ticket as T
+    where P.booking_agent_id is not null
+    and P.ticket_id=T.ticket_id
+    and P.booking_agent_id=B.booking_agent_id
+    and (date(purchase_date) between (CURDATE()-INTERVAL 1 Month) and CURDATE())
+    and T.airline_name=%s
+    group by email
+    order by ticket_sales desc
+    '''
+    cursor.execute(query, (airline_name,))
+    data=cursor.fetchall()
+    i=0
+    top5month = [("Vacant",0),("Vacant",0),("Vacant",0),("Vacant",0),("Vacant",0)]
+    if(data):
+        for item in data:
+            if(i<5):
+                top5month[i]=(item['email'], int(item['ticket_sales']))
+                i=i+1
+            else:
+                break
+    
+    query='''select B.email as email, count(P.ticket_id) as ticket_sales
+    from booking_agent as B, purchases as P, ticket as T
+    where P.booking_agent_id is not null 
+    and P.ticket_id=T.ticket_id
+    and P.booking_agent_id=B.booking_agent_id
+    and (date(purchase_date) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
+    and T.airline_name=%s
+    group by email
+    order by ticket_sales desc
+    '''
+    cursor.execute(query, (airline_name,))
+    data=cursor.fetchall()
+    i=0
+    top5year = [("Vacant",0),("Vacant",0),("Vacant",0),("Vacant",0),("Vacant",0)]
+    if(data):
+        for item in data:
+            if(i<5):
+                top5year[i]=(item['email'], int(item['ticket_sales']))
+                i=i+1
+            else:
+                break
+    
+    query='''select email, coalesce(sum(price)/10, 0) as total_commission
+    from booking_agent left join (purchases natural join ticket natural join flight)
+    on booking_agent.booking_agent_id=purchases.booking_agent_id
+    where purchases.booking_agent_id is not null
+    and (date(purchase_date) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
+    and airline_name=%s
+    group by email
+    order by total_commission desc
+    '''
+    cursor.execute(query, (airline_name,))
+    data=cursor.fetchall()
+    i=0
+    top5commission = [("Vacant",0),("Vacant",0),("Vacant",0),("Vacant",0),("Vacant",0)]
+    if(data):
+        for item in data:
+            if(i<5):
+                top5commission[i]=(item['email'], int(item['total_commission']))
+                i=i+1
+            else:
+                break
+    cursor.close()
+    return render_template('staff_view_top_booking_agents.html', top5month=top5month, top5year=top5year, top5commission=top5commission)
+
+@app.route('/staff_view_frequent_customers')
+def staff_view_frequent_customers():
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    username=session['username']
+    airline_name=session['airline_name']
+    cursor=conn.cursor()
+    query='''select C.email as email, count(T.ticket_id) as travel_num
+    from customer as C, purchases as P, ticket as T
+    where C.email=P.customer_email
+    and P.ticket_id=T.ticket_id
+    and (date(P.purchase_date) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
+    and T.airline_name=%s
+    group by email
+    order by travel_num desc
+    '''
+    cursor.execute(query, (airline_name,))
+    data=cursor.fetchone()
+    print(data)
+    cursor.close()
+    return render_template('staff_view_frequent_customers.html', username=username, results=data, flight_info=None, error=None, searching=False)
+
+@app.route('/staff_list_customer_flights', methods=['GET', 'POST'])
+def staff_list_customer_flights():
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    username=session['username']
+    airline_name=session['airline_name']
+    email=request.form['email']
+    cursor=conn.cursor()
+    query='''select F.flight_num, F.departure_airport, F.departure_time, F.arrival_airport, F.arrival_time
+    from purchases as P, ticket as T, flight as F
+    where P.customer_email=%s
+    and P.ticket_id=T.ticket_id
+    and T.airline_name=F.airline_name
+    and T.flight_num=F.flight_num
+    and F.airline_name=%s
+    '''
+    cursor.execute(query, (email, airline_name))
+    flight_info=cursor.fetchall()
+    
+    query='''select C.email as email, count(T.ticket_id) as travel_num
+    from customer as C, purchases as P, ticket as T
+    where C.email=P.customer_email
+    and P.ticket_id=T.ticket_id
+    and (date(P.purchase_date) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
+    and T.airline_name=%s
+    group by email
+    order by travel_num desc
+    '''
+    cursor.execute(query, (airline_name,))
+    data=cursor.fetchone()
+    cursor.close()
+    return render_template('staff_view_frequent_customers.html', username=username, results=data, flight_info=flight_info, error=None, searching=True)
+
+@app.route('/staff_view_report')
+def staff_view_report():
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    airline_name=session['airline_name']
+    cursor=conn.cursor()
+    query='''select COALESCE(count(ticket_id),0) as ticket_sales
+             from ticket natural join purchases
+             where airline_name=%s 
+             and (date(purchase_date) between (CURDATE()-INTERVAl 365 DAY) and CURDATE())
+    '''
+    cursor.execute(query,(airline_name,))
+    data=cursor.fetchone()
+    year_sales=int(data['ticket_sales'])
+    query='''select COALESCE(count(ticket_id),0) as ticket_sales
+            from ticket natural join purchases
+            where airline_name=%s
+            and (date(purchase_date) > (CURDATE()-INTERVAL %s MONTH))
+            and (date(purchase_date) <= (CURDATE()-INTERVAL %s MONTH))
+    '''
+    months_sales=[]
+    months_label=[]
+    for i in range(6,0,-1):
+        cursor.execute(query,(airline_name,i,i-1))
+        data=cursor.fetchone()
+        months_sales.append(int(data['ticket_sales']))
+        months_label.append(str(i)+" month ago")
+    cursor.close()
+    print(months_sales, months_label)
+    upperbound=max(months_sales)
+    return render_template('staff_view_report.html', max=upperbound, year_sales=year_sales, labels=months_label, values=months_sales)
+
+@app.route('/staff_view_report_custom', methods=['GET', 'POST'])
+def staff_view_report_custom():
+    if not check_staff_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    airline_name=session['airline_name']
+    cursor=conn.cursor()
+    start_date=request.form['start_date']
+    end_date=request.form['end_date']
+    query='''select COALESCE(count(ticket_id),0) as ticket_sales
+    from ticket natural join purchases
+    where airline_name=%s
+    and (date(purchase_date) >=date(%s))
+    and (date(purchase_date) <=date(%s))
+    '''
+    cursor.execute(query,(airline_name, start_date, end_date))
+    data=cursor.fetchone()
+    range_ticket_sales=int(data['ticket_sales'])
+    query='''select DATE_FORMAT(purchase_date, '%%m-%%Y') as y_m, COALESCE(count(ticket_id),0) as ticket_sales
+    from ticket natural join purchases
+    where airline_name=%s
+    and (date(purchase_date)>=date(%s))
+    and (date(purchase_date)<=date(%s))
+    group by DATE_FORMAT(purchase_date, '%%m-%%Y')
+    '''
+    cursor.execute(query, (airline_name, start_date, end_date))
+    data=cursor.fetchall()
+    labels=[]
+    values=[]
+    for item in data:
+        labels.append(item['y_m'])
+        values.append(int(item['ticket_sales']))
+    upperbound=max(values)
+    return render_template('staff_view_report_custom.html', s_date=start_date, e_date=end_date, max=upperbound, range_sales=range_ticket_sales, labels=labels, values=values)
 
 @app.route('/staff_logout')
 def staff_logout():

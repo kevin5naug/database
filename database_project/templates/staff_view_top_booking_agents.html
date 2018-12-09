@@ -1,0 +1,84 @@
+<!DOCTYPE HTML>
+<html>
+<head> 
+    <title>My top customers</title>
+<script>
+window.onload = function () {
+var chart = new CanvasJS.Chart("chartContainer", {
+	animationEnabled: true,
+	theme: "light2", // "light1", "light2", "dark1", "dark2"
+	title:{
+		text: "Top booking agent based on ticket sales for the past month"
+	},
+	axisY: {
+		title: "Tickets Sales"
+	},
+	data: [{        
+		type: "column",  
+		showInLegend: false, 
+		dataPoints: [      
+		    { y: parseInt("{{top5month[0][1]}}"), label: "{{top5month[0][0]}}" },
+			{ y: parseInt("{{top5month[1][1]}}"),  label:"{{top5month[1][0]}}"},
+			{ y: parseInt("{{top5month[2][1]}}"),  label: "{{top5month[2][0]}}" },
+			{ y: parseInt("{{top5month[3][1]}}"),  label: "{{top5month[3][0]}}" },
+			{ y: parseInt("{{top5month[4][1]}}"),  label: "{{top5month[4][0]}}" }
+		]
+	}]
+});
+chart.render();
+var chart1 = new CanvasJS.Chart("chartContainer1", {
+	animationEnabled: true,
+	theme: "light2", // "light1", "light2", "dark1", "dark2"
+	title:{
+		text: "Top booking agent based on ticket sales for the past year"
+	},
+	axisY: {
+		title: "Tickets Sales"
+	},
+	data: [{        
+		type: "column",  
+		showInLegend: false, 
+		dataPoints: [      
+		    { y: parseInt("{{top5year[0][1]}}"), label: "{{top5year[0][0]}}" },
+			{ y: parseInt("{{top5year[1][1]}}"),  label:"{{top5year[1][0]}}"},
+			{ y: parseInt("{{top5year[2][1]}}"),  label: "{{top5year[2][0]}}" },
+			{ y: parseInt("{{top5year[3][1]}}"),  label: "{{top5year[3][0]}}" },
+			{ y: parseInt("{{top5year[4][1]}}"),  label: "{{top5year[4][0]}}" }
+		]
+	}]
+});
+chart1.render();
+var chart2 = new CanvasJS.Chart("chartContainer2", {
+	animationEnabled: true,
+	theme: "light2", // "light1", "light2", "dark1", "dark2"
+	title:{
+		text: "Top booking agent based on commission received for the last year"
+	},
+	axisY: {
+		title: "Commission"
+	},
+	data: [{        
+		type: "column",  
+		showInLegend: false, 
+		dataPoints: [      
+		    { y: parseInt("{{top5commission[0][1]}}"), label: "{{top5commission[0][0]}}" },
+			{ y: parseInt("{{top5commission[1][1]}}"),  label:"{{top5commission[1][0]}}"},
+			{ y: parseInt("{{top5commission[2][1]}}"),  label: "{{top5commission[2][0]}}" },
+			{ y: parseInt("{{top5commission[3][1]}}"),  label: "{{top5commission[3][0]}}" },
+			{ y: parseInt("{{top5commission[4][1]}}"),  label: "{{top5commission[4][0]}}" }
+		]
+	}]
+});
+chart2.render();
+}
+</script>
+</head>
+<body>
+<div id="chartContainer" style="height: 300px; width: 100%;"></div>
+<div id="chartContainer1" style="height: 300px; width: 100%;"></div>
+<div id="chartContainer2" style="height: 300px; width: 100%;"></div>
+<script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+<h3><a href='/staff_home'>Go Back to Your Home Page</a></h3>
+<h3><a href='/staff_logout'>Logout Your Staff Account</a></h3>
+</body>
+</html>

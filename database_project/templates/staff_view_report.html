@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="utf-8" />
+   <title>Chart.js </title>
+ 
+   <!-- import plugin script -->
+   <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/1.0.2/Chart.min.js'></script>
+ 
+</head>
+<body>
+<div>
+<h2>Total number of tickets sold last 365 days: {{year_sales}}</h2>    
+<h2>Monthwise Ticket Sales Chart</h2><!-- bar chart canvas element -->
+<canvas id="chart" width="600" height="400"></canvas>
+<script>
+  // bar chart data
+  var barData = {
+    labels : [
+      {% for item in labels %}
+       "{{ item }}",
+      {% endfor %}
+    ],
+    datasets : [{
+      fillColor: "rgba(151,187,205,0.2)",
+      strokeColor: "rgba(151,187,205,1)",
+      pointColor: "rgba(151,187,205,1)",
+      data : [
+	{% for item in values %}
+	   "{{ item }}",
+	  {% endfor %}
+	]
+      }
+    ]
+  }
+ // get bar chart canvas
+ var mychart = document.getElementById("chart").getContext("2d");
+   steps = 10
+max = {{max}}
+ // draw bar chart
+ new Chart(mychart).Bar(barData, {
+   scaleOverride: true,
+   scaleSteps: steps,
+   scaleStepWidth: Math.ceil(max / steps),
+   scaleStartValue: 0,
+   scaleShowVerticalLines: true,
+   scaleShowGridLines : true,
+   barShowStroke : true,
+   scaleShowLabels: true
+   }
+ );
+</script>
+</div>
+<div>
+<form action="/staff_view_report_custom" method="POST">
+    <h3>Track spendings between following dates:</h3>
+    <input type="date" name="start_date" placeholder="date" required/>
+    <input type="date" name="end_date" placeholder="date" required/>
+    <input type="submit" value= search />
+    </form>
+</div>
+<div>
+    <h3><a href='/staff_home'>Return Home</a></h3>
+    </div>
+</body>
+</html>
