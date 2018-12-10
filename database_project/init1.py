@@ -339,7 +339,7 @@ def staff_home():
 @app.route('/booking_agent_home')
 def booking_agent_home():
     if not check_agent_authorization(session):
-        error='You are not authorized as an airline staff to perform such action.'
+        error='You are not authorized as a booking agent to perform such action.'
         return redirect(url_for('universal_logout'))
 
     email=session['email']
@@ -356,7 +356,7 @@ def booking_agent_home():
 def searchFlightsAgent():
     
     if not check_agent_authorization(session):
-        error='You are not authorized as an airline staff to perform such action.'
+        error='You are not authorized as a booking agent to perform such action.'
         return redirect(url_for('universal_logout'))
     
     d_airport=request.form['departure_airport']
@@ -388,7 +388,7 @@ def searchFlightsAgent():
 def agent_purchase_page(airline_name,flight_num,seats_left):
     
     if not check_agent_authorization(session):
-        error='You are not authorized as an airline staff to perform such action.'
+        error='You are not authorized as a booking agent to perform such action.'
         return redirect(url_for('universal_logout'))
 
     return render_template('agent_purchase_page.html',airline_name=airline_name,flight_num=flight_num,seats_left=seats_left)
@@ -397,7 +397,7 @@ def agent_purchase_page(airline_name,flight_num,seats_left):
 def agent_purchase(airline_name,flight_num,seats_left):
 
     if not check_agent_authorization(session):
-        error='You are not authorized as an airline staff to perform such action.'
+        error='You are not authorized as a booking agent to perform such action.'
         return redirect(url_for('universal_logout'))
     
     customer_email = request.form['customer_email']
@@ -434,7 +434,7 @@ def agent_purchase(airline_name,flight_num,seats_left):
 def agent_commission():
 
     if not check_agent_authorization(session):
-        error='You are not authorized as an airline staff to perform such action.'
+        error='You are not authorized as a booking agent to perform such action.'
         return redirect(url_for('universal_logout'))
     
     agent_email=session['email']
@@ -467,7 +467,7 @@ def agent_commission():
 def check_commission():
 
     if not check_agent_authorization(session):
-        error='You are not authorized as an airline staff to perform such action.'
+        error='You are not authorized as a booking agent to perform such action.'
         return redirect(url_for('universal_logout'))
     
     agent_email=session['email']
@@ -510,7 +510,7 @@ def check_commission():
 def top_tickets():
 
     if not check_agent_authorization(session):
-        error='You are not authorized as an airline staff to perform such action.'
+        error='You are not authorized as a booking agent to perform such action.'
         return redirect(url_for('universal_logout'))
     
     email=session['email']
@@ -560,7 +560,7 @@ def top_tickets():
 def customer_home():
 
     if not check_customer_authorization(session):
-        error='You are not authorized as an airline staff to perform such action.'
+        error='You are not authorized as a customer to perform such action.'
         return redirect(url_for('universal_logout'))
     
     email=session['email']
@@ -578,7 +578,7 @@ def customer_home():
 def searchFlightsCustomer():
 
     if not check_customer_authorization(session):
-        error='You are not authorized as an airline staff to perform such action.'
+        error='You are not authorized as a customer to perform such action.'
         return redirect(url_for('universal_logout'))
     
     source_city = request.form['source_city']
@@ -628,7 +628,7 @@ def searchFlightsCustomer():
 def customer_purchase(airline_name,flight_num,seats_left):
 
     if not check_customer_authorization(session):
-        error='You are not authorized as an airline staff to perform such action.'
+        error='You are not authorized as a customer to perform such action.'
         return redirect(url_for('universal_logout'))
     
     email=session['email']
@@ -656,7 +656,7 @@ def customer_purchase(airline_name,flight_num,seats_left):
 def track_customer_spending():
 
     if not check_customer_authorization(session):
-        error='You are not authorized as an airline staff to perform such action.'
+        error='You are not authorized as a customer to perform such action.'
         return redirect(url_for('universal_logout'))
     
     email=session['email']
@@ -691,7 +691,7 @@ def track_customer_spending():
 def rangeSpending():
 
     if not check_customer_authorization(session):
-        error='You are not authorized as an airline staff to perform such action.'
+        error='You are not authorized as a customer to perform such action.'
         return redirect(url_for('universal_logout'))
     
     email=session['email']

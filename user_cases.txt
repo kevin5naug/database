@@ -1,0 +1,535 @@
+Application Use Cases:
+
+1. View Public Info:
+
+a. Search for upcoming flights based on source city/airport name, destination city/airport name,
+date
+Query:
+	'''select * 
+    from flight as F, airport as D, airport as A 
+    where F.departure_airport like %s 
+    and F.arrival_airport like %s 
+    and F.departure_airport=D.airport_name 
+    and D.airport_city like %s 
+    and F.arrival_airport=A.airport_name 
+    and A.airport_city like %s 
+    and ((date(F.arrival_time)=%s) 
+    or (date(F.departure_time)=%s))''' 
+    (search flights satisfying the given constraints)
+
+b. See the flights status based on flight number, arrival/departure date.
+Query:
+	if(flight_num): (if the flight_num is given)
+        query='''select * 
+        from flight as F 
+        where F.flight_num=%s 
+        and ((date(F.arrival_time)=%s)
+        or (date(F.departure_time)=%s))'''
+        cursor.execute(query, (flight_num, date, date))
+    else: (if the flight_num is not given)
+        query='''select * 
+        from flight as F 
+        where (date(F.arrival_time)=%s)
+        or (date(F.departure_time)=%s)'''
+        cursor.execute(query, (date, date))
+
+2. Register:
+
+a. Customer Registration
+Query:
+	'SELECT * FROM customer WHERE email = %s' 
+	(check whether this email address has been registered or not)
+
+	'INSERT INTO customer VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)' 
+	(create this customer account)
+
+b. Booking Agent Registration
+Query:
+	'SELECT * FROM booking_agent WHERE email = %s' 
+	(check whether this email address has been registered or not)
+
+	'select IFNULL(MAX(booking_agent_id),0) as booking_agent_id from booking_agent' 
+	(find the maximal booking agent id used in the system so we can assign a unique booking agent id to the newly registered one)
+
+	'INSERT INTO booking_agent VALUES(%s, %s, %s)' 
+	(create this booking agent account)
+
+c. Airline Staff Registration
+Query:
+	'SELECT * FROM airline_staff WHERE username = %s' 
+	(check whether this user name has been registered or not)
+
+	'INSERT INTO airline_staff VALUES(%s, %s, %s, %s, %s, %s)' 
+	(create this airline staff account)
+
+3. Login:
+
+a. Customer Login
+Query:
+	'SELECT * FROM customer WHERE email = %s and password = %s' 
+	(verify whether the given email address associated with the given password is indeed a registered customer account)
+
+	'select name from customer where email=%s' 
+	(get the name of this customer once he/she logs in)
+
+b. Booking Agent Login
+Query:
+	'SELECT * FROM booking_agent WHERE email = %s and password = %s' 
+	(verify whether the given email address associated with the given password is indeed a registered booking agent account)
+
+	'select booking_agent_id from booking_agent where email=%s' 
+	(get the booking agent id once he/she logs in)
+
+c. Airline Staff Registration
+Query:
+	'SELECT * FROM airline_staff WHERE username = %s and password = %s' 
+	(verify whether the given username associated with the given password is indeed a registered airline staff account)
+
+	'select * from airline_staff where username=%s' 
+	(get information of this logged in airline staff)
+
+
+
+
+
+
+
+Security Check:
+Before we dive into use cases for customer/booking agent/airline staff, we use the queries below to examine whether the user is logged in and his/her user type is allowed to perform such action. They will be logged out by our application once we detect they are not authorized to perform such action:
+
+a. check customer authorization:
+Query:
+	'select * from customer where email=%s and name=%s' 
+	(check whether the account is indeed a customer account)
+
+b. check booking agent authorization:
+Query:
+	'select * from booking_agent where email=%s and booking_agent_id=%s' 
+	(check whether the account is indeed a booking agent account)
+
+c. check airline staff authorization:
+Query:
+	'select * from airline_staff where username=%s and airline_name=%s' 
+	(check whether the account is indeed an airline staff account)
+
+
+Integrity Check:
+Before we make any insertion/update that might violate the integrity constraints of our database, we use try...with clause to deal with any exception thrown due to constraint violation, so our application will not crash.
+
+
+
+
+
+
+
+
+Customer Use Cases:
+
+4. View My Flights:
+Query:
+	'''select airline_name,flight_num,departure_airport,departure_time,arrival_airport,arrival_time,price,status,airplane_id 
+    from flight natural join ticket natural join purchases
+    where purchases.customer_email=%s
+    and ((date(departure_time) between CURDATE() and (CURDATE()+ INTERVAL 30 DAY)) 
+    or (date(arrival_time) between CURDATE() and (CURDATE()+ INTERVAL 30 DAY)))
+    ''' 
+    (get upcoming flights in 30 days of this customer)
+
+5. Purchase Tickets:
+Query:
+	'select IFNULL(MAX(ticket_id),0) as ticket_id from ticket' 
+	(find the maximal ticket id used in the system so we can assign a unique ticket id for the ticket to be inserted)
+
+	'insert into ticket values(%s, %s, %s)' 
+	(insert the purchased ticket into the database)
+
+	'insert into purchases(ticket_id,customer_email,purchase_date) values(%s, %s, CURDATE())' 
+	(insert the purchase record into the database)
+
+6. Search for Flights:
+Query:
+	'''select F.airline_name, F.flight_num, F.departure_airport, F.departure_time, F.arrival_airport, F.arrival_time, F.price, F.airplane_id, (AI.seats - (select count(*) from ticket as T where T.airline_name=F.airline_name and T.flight_num=F.flight_num)) as seats_left
+    from flight as F, airport as D, airport as A, airplane as AI
+    where F.departure_airport like %s
+    and F.arrival_airport like %s
+    and F.departure_airport=D.airport_name
+    and D.airport_city like %s
+    and F.arrival_airport=A.airport_name
+    and A.airport_city like %s
+    and F.airplane_id=AI.airplane_id
+    and ((date(F.arrival_time)=%s)
+    or (date(F.departure_time)=%s))'''  
+    (search flights satisfying the given constraints. also return how many seats are still open on each flight.)
+
+7. Track My Spending:
+Query:
+	'''select COALESCE(SUM(flight.price),0) as spendings
+    from ticket natural join purchases natural join flight
+    where purchases.customer_email=%s 
+    and (date(purchase_date) between (CURDATE()-INTERVAl 365 DAY) and CURDATE())
+    ''' 
+    (get total spending over the last year)
+
+    '''select COALESCE(SUM(flight.price),0) as month_spend
+    from ticket natural join purchases natural join flight
+    where purchases.customer_email=%s
+    and (date(purchase_date) > (CURDATE()-INTERVAL %s MONTH))
+    and (date(purchase_date) <= (CURDATE()-INTERVAL %s MONTH))
+    '''
+    (get monthwise spending)
+
+    '''select COALESCE(SUM(flight.price),0) as spendings
+    from ticket natural join purchases natural join flight
+    where purchases.customer_email=%s
+    and (date(purchase_date) >= date(%s))
+    and (date(purchase_date) <= date(%s))
+    '''
+    (get total spending over a given range of dates)
+
+    '''select DATE_FORMAT(purchase_date, '%%m-%%Y') as y_m, COALESCE(SUM(price),0) as spendings 
+    from ticket natural join purchases natural join flight
+    where purchases.customer_email=%s
+    and (date(purchase_date) >= date(%s))
+    and (date(purchase_date) <= date(%s))
+    GROUP BY DATE_FORMAT(purchase_date, '%%m-%%Y')
+	'''
+	(get monthwise spending over a given range of dates)
+
+8. Logout:
+No query needed
+
+
+
+
+
+
+
+Booking Agent Use Cases:
+4. View My Flights:
+Query:
+	'''select customer_email, airline_name,flight_num,departure_airport,departure_time,arrival_airport,arrival_time,price,status,airplane_id
+    from purchases natural join ticket natural join flight natural join booking_agent 
+    where booking_agent.email=%s
+    and ((date(departure_time) between CURDATE() and (CURDATE()+ INTERVAL 30 DAY)) 
+    or (date(arrival_time) between CURDATE() and (CURDATE()+ INTERVAL 30 DAY)))
+    '''
+    (get upcoming flights in 30 days booked by this booking agent)
+
+5. Purchase Tickets:
+Query:
+	'''select *
+    from customer
+    where email=%s
+    ''' 
+    (check whether this customer account exists)
+
+    'select IFNULL(MAX(ticket_id),0) as ticket_id from ticket' 
+    (find the maximal ticket id used in the system so we can assign a unique ticket id for the ticket to be inserted)
+
+    'insert into ticket values(%s, %s, %s)' 
+    (insert the purchased ticket into the database)
+
+    'insert into purchases(ticket_id,customer_email,booking_agent_id,purchase_date) values(%s, %s, %s, CURDATE())' 
+    (insert the purchase record into the database)
+
+6. Search for Flights:
+Query:
+	'''select F.airline_name, F.flight_num, F.departure_airport, F.departure_time, F.arrival_airport, F.arrival_time, F.price, F.airplane_id, (A.seats - (select count(*) from ticket as T where T.airline_name=F.airline_name and T.flight_num=F.flight_num)) as seats_left  
+    from flight as F, airplane as A
+    where F.airline_name=A.airline_name
+    and F.airplane_id=A.airplane_id
+    and departure_airport=%s 
+    and arrival_airport=%s
+    and (date(arrival_time)=%s)
+    group by airline_name, flight_num
+    having seats_left>0
+    ''' 
+    (search flights satisfying the given constraints. also return how many seats are still open on each flight.)
+
+7. View My Commission:
+Query:
+	'''select coalesce(SUM(price),0)/10 as total_commission
+    from flight natural join ticket natural join purchases
+    where purchases.booking_agent_id=%s
+    and (date(purchase_date) between (CURDATE()-INTERVAL 30 DAY) and CURDATE())
+    ''' 
+    (calculate total amount of commission earned last month)
+
+    '''select count(purchases.ticket_id) as total_num
+    from ticket natural join flight natural join purchases
+    where purchases.booking_agent_id=%s
+    and (date(purchase_date) between (CURDATE()-INTERVAL 30 DAY) and CURDATE())
+	''' 
+	(find the number of tickets sold last month)
+
+	'''select coalesce(SUM(price),0)/10 as total_commission
+    from flight natural join ticket natural join purchases
+    where purchases.booking_agent_id=%s
+    and purchase_date between %s and %s
+    ''' 
+    (calculate total amount of commission earned over a given range of dates)
+
+8. View Top Customers:
+Query:
+	'''select customer.email AS email, count(purchases.ticket_id) AS ticket_num
+    from customer
+    left join purchases on customer.email=purchases.customer_email
+    where purchases.booking_agent_id=%s and (date(purchases.purchase_date) between (CURDATE() - INTERVAL 6 MONTH) AND CURDATE())
+    group by customer.email 
+    ORDER BY ticket_num DESC
+	''' 
+	(top customers based on the number of tickets booked through this booking agent over last 6 months)
+
+	'''select customer.email AS email, coalesce(sum(price)/10,0) as total_commission
+    from customer
+    left join (purchases natural join ticket natural join flight) on customer.email=purchases.customer_email 
+    where purchases.booking_agent_id=%s and (date(purchases.purchase_date) between (CURDATE() - INTERVAL 1 YEAR) AND CURDATE())
+    group by customer.email
+    order by total_commission DESC
+    ''' 
+    (top customers based on the commision earned over last year)
+
+9. Logout:
+No Query Needed.
+
+
+
+
+
+
+
+Airline Staff Use Cases:
+4. View My Flights:
+Query:
+	'''select * 
+    from flight 
+    where airline_name=%s 
+    and ((date(departure_time) between CURDATE() and (CURDATE()+ INTERVAL 30 DAY)) 
+    or (date(arrival_time) between CURDATE() and (CURDATE()+INTERVAL 30 DAY)))'''
+    (find upcoming flights in 30 days operated by the given airline)
+
+    '''select * 
+    from flight as F, airport as D, airport as A 
+    where F.airline_name=%s
+    and F.departure_airport like %s
+    and F.arrival_airport like %s 
+    and F.departure_airport=D.airport_name 
+    and D.airport_city like %s 
+    and F.arrival_airport=A.airport_name 
+    and A.airport_city like %s 
+    and ((date(F.arrival_time)<=%s)
+    or (date(F.departure_time)>=%s))'''
+    (search for flights satisfying the constraints given)
+
+    '''select C.email, C.name, C.phone_number
+    from flight as F, ticket as T, purchases as P, customer as C
+    where F.flight_num=%s
+    and F.airline_name=%s
+    and F.airline_name=T.airline_name 
+    and F.flight_num=T.flight_num
+    and T.ticket_id=P.ticket_id
+    and P.customer_email=C.email'''
+    (list all customers on the flight given)
+
+5. Create New Flights:
+Query:
+	'''select * 
+    from flight
+    where airline_name=%s
+    and flight_num=%s'''
+    (check whether a flight with given information exists in the system or not)
+
+    'insert into flight values(%s, %s, %s, %s, %s, %s, %s, %s, %s)'
+    (insert flight with given information)
+
+6. Change Status of Flights:
+Query:
+	'''select * 
+    from flight
+    where airline_name=%s
+    and flight_num=%s
+    ''' 
+    (check whether the targeted flight exists or not first)
+
+    '''update flight 
+    set status=%s
+    where airline_name=%s
+    and flight_num=%s
+    ''' 
+    (update the flight status)
+
+7. Add Airplane in the System:
+Query:
+	'''insert into airplane values(%s, %s, %s)''' 
+	(insert airplane with given information)
+
+8. Add New Airport in the System:
+Query:
+	'''insert into airport values(%s, %s)'''
+	(insert airport with given information)
+
+9. View All Booking Agents:
+Query:
+	'''select B.email as email, count(P.ticket_id) as ticket_sales
+    from booking_agent as B, purchases as P, ticket as T
+    where P.booking_agent_id is not null
+    and P.ticket_id=T.ticket_id
+    and P.booking_agent_id=B.booking_agent_id
+    and (date(purchase_date) between (CURDATE()-INTERVAL 1 Month) and CURDATE())
+    and T.airline_name=%s
+    group by email
+    order by ticket_sales desc
+    '''
+    (find top booking agents based on ticket sales over last month)
+
+    '''select B.email as email, count(P.ticket_id) as ticket_sales
+    from booking_agent as B, purchases as P, ticket as T
+    where P.booking_agent_id is not null 
+    and P.ticket_id=T.ticket_id
+    and P.booking_agent_id=B.booking_agent_id
+    and (date(purchase_date) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
+    and T.airline_name=%s
+    group by email
+    order by ticket_sales desc
+    '''
+    (find top booking agents based on ticket sales over last year)
+
+    '''select email, coalesce(sum(price)/10, 0) as total_commission
+    from booking_agent left join (purchases natural join ticket natural join flight)
+    on booking_agent.booking_agent_id=purchases.booking_agent_id
+    where purchases.booking_agent_id is not null
+    and (date(purchase_date) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
+    and airline_name=%s
+    group by email
+    order by total_commission desc
+    '''
+    (find top booking agents based on commission over last year)
+
+10. View Frequent Customers:
+Query:
+	'''select C.email as email, count(T.ticket_id) as travel_num
+    from customer as C, purchases as P, ticket as T, flight as F
+    where C.email=P.customer_email
+    and P.ticket_id=T.ticket_id
+    and T.airline_name=F.airline_name
+    and T.flight_num=F.flight_num
+    and (date(F.arrival_time) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
+    and T.airline_name=%s
+    group by email
+    order by travel_num desc
+    '''
+    (find frequent customers based on the number of flights they have taken)
+
+	'''select F.flight_num, F.departure_airport, F.departure_time, F.arrival_airport, F.arrival_time
+    from purchases as P, ticket as T, flight as F
+    where P.customer_email=%s
+    and P.ticket_id=T.ticket_id
+    and T.airline_name=F.airline_name
+    and T.flight_num=F.flight_num
+    and F.airline_name=%s
+    and (date(F.arrival_time) <= CURDATE())
+    '''
+    (find all flights that have already been taken by the customer given)
+
+11. View Reports:
+Query:
+	'''select COALESCE(count(ticket_id),0) as ticket_sales
+     from ticket natural join purchases
+     where airline_name=%s 
+     and (date(purchase_date) between (CURDATE()-INTERVAl 365 DAY) and CURDATE())
+    '''
+    (find total number of tickets sold over last year)
+
+    '''select COALESCE(count(ticket_id),0) as ticket_sales
+    from ticket natural join purchases
+    where airline_name=%s
+    and (date(purchase_date) > (CURDATE()-INTERVAL %s MONTH))
+    and (date(purchase_date) <= (CURDATE()-INTERVAL %s MONTH))
+    '''
+    (find monthwise ticket sales)
+
+    '''select COALESCE(count(ticket_id),0) as ticket_sales
+    from ticket natural join purchases
+    where airline_name=%s
+    and (date(purchase_date) >=date(%s))
+    and (date(purchase_date) <=date(%s))
+    '''
+    (find total number of tickets sold over a given range of dates)
+
+    '''select DATE_FORMAT(purchase_date, '%%m-%%Y') as y_m, COALESCE(count(ticket_id),0) as ticket_sales
+    from ticket natural join purchases
+    where airline_name=%s
+    and (date(purchase_date)>=date(%s))
+    and (date(purchase_date)<=date(%s))
+    group by DATE_FORMAT(purchase_date, '%%m-%%Y')
+    '''
+    (find monthwise ticket sales over a given range of dates)
+
+12. Comparison of Revenue Earned:
+Query:
+	'''select COALESCE(SUM(flight.price),0) as revenue
+    from ticket natural join purchases natural join flight
+    where purchases.booking_agent_id is null
+    and flight.airline_name=%s
+    and (date(purchase_date) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
+    '''
+    (total amount of direct sales over last year)
+
+    '''select COALESCE(SUM(flight.price),0)/10*9 as revenue
+    from ticket natural join purchases natural join flight
+    where purchases.booking_agent_id is not null
+    and flight.airline_name=%s
+    and (date(purchase_date) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
+    '''
+    (total amount of indirect sales over last year)
+
+    '''select COALESCE(SUM(flight.price),0) as revenue
+    from ticket natural join purchases natural join flight
+    where purchases.booking_agent_id is null
+    and flight.airline_name=%s
+    and (date(purchase_date) between (CURDATE()-INTERVAL 1 Month) and CURDATE())
+    '''
+    (total amount of direct sales over last month)
+
+    '''select COALESCE(SUM(flight.price),0)/10*9 as revenue
+    from ticket natural join purchases natural join flight
+    where purchases.booking_agent_id is not null
+    and flight.airline_name=%s
+    and (date(purchase_date) between (CURDATE()-INTERVAL 1 Month) and CURDATE())
+    '''
+    (total amount of indirect sales over last month)
+
+13. View Top Destinations:
+Query:
+	'''select A.airport_city as destination, count(T.ticket_id) as visit_num
+    from purchases as P, ticket as T, flight as F, airport as A
+    where P.ticket_id=T.ticket_id
+    and (date(F.arrival_time) between (CURDATE()-INTERVAL 3 Month) and CURDATE())
+    and T.airline_name=F.airline_name
+    and T.airline_name=%s
+    and T.flight_num=F.flight_num
+    and F.arrival_airport=A.airport_name
+    group by destination
+    order by visit_num desc
+    '''
+    (top destinations based on ticket sales over last 3 months)
+
+    '''select A.airport_city as destination, count(T.ticket_id) as visit_num
+    from purchases as P, ticket as T, flight as F, airport as A
+    where P.ticket_id=T.ticket_id
+    and (date(F.arrival_time) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
+    and T.airline_name=F.airline_name
+    and T.airline_name=%s
+    and T.flight_num=F.flight_num
+    and F.arrival_airport=A.airport_name
+    group by destination
+    order by visit_num desc
+    '''
+    (top destinations based on ticket sales over last year)
+
+14. Logout:
+No Query Needed.
+
+
+
+

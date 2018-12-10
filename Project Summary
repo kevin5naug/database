@@ -1,0 +1,13 @@
+Project Summary
+
+Team Member: Yiyun Fan & Yixing Guan
+
+1. Yiyun Fan implemented all user cases for customer & booking agent (including login & register).
+
+2. Yixing Guan implemented all user cases for booking agent (including login & register), and the public search/flight status check without login
+
+3. They tested and debuged together.
+
+4. Yiyun Fan wrote the required user_cases.txt, listing and explaining all queries used for our project in that txt file.
+
+5. Yixing Guan merged and organized all the code files and wrote the required README.txt, listing and explaining all files submitted for our project. 
