@@ -338,6 +338,10 @@ def staff_home():
 
 @app.route('/booking_agent_home')
 def booking_agent_home():
+    if not check_agent_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+
     email=session['email']
     agent_id=session['booking_agent_id']
     flight_info=get_agent_upflight(email)
@@ -350,6 +354,11 @@ def booking_agent_home():
 
 @app.route('/searchFlightsAgent',methods=['GET','POST'])
 def searchFlightsAgent():
+    
+    if not check_agent_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    
     d_airport=request.form['departure_airport']
     a_airport=request.form['arrival_airport']
     date=request.form['date']
@@ -377,10 +386,20 @@ def searchFlightsAgent():
 
 @app.route('/agent_purchase_page/<airline_name>/<flight_num>/<int:seats_left>', methods=['GET','POST'])
 def agent_purchase_page(airline_name,flight_num,seats_left):
+    
+    if not check_agent_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+
     return render_template('agent_purchase_page.html',airline_name=airline_name,flight_num=flight_num,seats_left=seats_left)
 
 @app.route('/agent_purchase/<airline_name>/<flight_num>/<int:seats_left>',methods=['GET','POST'])
 def agent_purchase(airline_name,flight_num,seats_left):
+
+    if not check_agent_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    
     customer_email = request.form['customer_email']
     agent_email=session['email']
     cursor=conn.cursor()
@@ -413,6 +432,11 @@ def agent_purchase(airline_name,flight_num,seats_left):
 
 @app.route('/agent_commission', methods=['GET','POST'])
 def agent_commission():
+
+    if not check_agent_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    
     agent_email=session['email']
     agent_id=session['booking_agent_id']
     cursor=conn.cursor()
@@ -441,6 +465,11 @@ def agent_commission():
 
 @app.route('/check_commission',methods=['GET','POST'])
 def check_commission():
+
+    if not check_agent_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    
     agent_email=session['email']
     agent_id=session['booking_agent_id']
     start_date=request.form['start']
@@ -479,6 +508,11 @@ def check_commission():
 
 @app.route('/top_tickets')
 def top_tickets():
+
+    if not check_agent_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    
     email=session['email']
     agent_id=session['booking_agent_id']
     cursor=conn.cursor()
@@ -524,6 +558,11 @@ def top_tickets():
 
 @app.route('/customer_home')
 def customer_home():
+
+    if not check_customer_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    
         email=session['email']
         name=session['name']
 
@@ -537,6 +576,11 @@ def customer_home():
 
 @app.route('/searchFlightsCustomer', methods=['GET', 'POST'])
 def searchFlightsCustomer():
+
+    if not check_customer_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    
     source_city = request.form['source_city']
     source_airport = request.form['source_airport']
     destination_city = request.form['destination_city']
@@ -582,6 +626,11 @@ def searchFlightsCustomer():
 
 @app.route('/customer_purchase/<airline_name>/<flight_num>/<int:seats_left>',methods=['GET','POST'])
 def customer_purchase(airline_name,flight_num,seats_left):
+
+    if not check_customer_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    
     email=session['email']
     cursor=conn.cursor()
     message=None
@@ -605,6 +654,11 @@ def customer_purchase(airline_name,flight_num,seats_left):
     
 @app.route('/track_customer_spending')
 def track_customer_spending():
+
+    if not check_customer_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    
     email=session['email']
     cursor=conn.cursor()
     query='''select COALESCE(SUM(flight.price),0) as spendings
@@ -635,6 +689,11 @@ def track_customer_spending():
 
 @app.route('/rangeSpending',methods=['GET','POST'])
 def rangeSpending():
+
+    if not check_customer_authorization(session):
+        error='You are not authorized as an airline staff to perform such action.'
+        return redirect(url_for('universal_logout'))
+    
     email=session['email']
     cursor=conn.cursor()
     start_date=request.form['start_date']
@@ -1314,14 +1373,51 @@ def flight_already_exist(airline_name, flight_num):
     else:
         return False
 
+def check_customer_authorization(session):
+    if('email' not in session.keys()):
+        return False
+    if('name' not in session.keys()):
+        return False
+    email=session['email']
+    name=session['name']
+    cursor=conn.cursor()
+    query='select * from customer where email=%s and name=%s'
+    cursor.execute(query, (email, name))
+    info=cursor.fetchone()
+    cursor.close()
+    if(info):
+        return True
+    else:
+        return False
+
+def check_agent_authorization(session):
+    if('booking_agent_id' not in session.keys()):
+        return False
+    if('email' not in session.keys()):
+        return False
+    email=session['email']
+    booking_agent_id=session['booking_agent_id']
+    cursor=conn.cursor()
+    query='select * from booking_agent where email=%s and booking_agent_id=%s'
+    cursor.execute(query, (email, booking_agent_id))
+    info=cursor.fetchone()
+    cursor.close()
+    if(info):
+        return True
+    else:
+        return False
+
 def check_staff_authorization(session):
+    if('airline_name' not in session.keys()):
+        return False
     if('username' not in session.keys()):
         return False
     else:
         username=session['username']
+        airline_name=session['airline_name']
         cursor=conn.cursor()
-        query='select * from airline_staff where username=%s'
-        cursor.execute(query, (username))
+        query='select * from airline_staff where username=%s and airline_name=%s'
+        cursor.execute(query, (username, airline_name))
         info=cursor.fetchone()
         cursor.close()
         if(info):
