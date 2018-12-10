@@ -563,16 +563,16 @@ def customer_home():
         error='You are not authorized as an airline staff to perform such action.'
         return redirect(url_for('universal_logout'))
     
-        email=session['email']
-        name=session['name']
+    email=session['email']
+    name=session['name']
 
-        flight_info=get_customer_upflight(email)
-        error=None
-        if(flight_info):
-            return render_template('customer_home.html',name=name, results=flight_info,error=error)
-        else:
-            error='No upcoming flight scheduled in 30 days'
-            return render_template('customer_home.html',name=name, results=flight_info,error=error)
+    flight_info=get_customer_upflight(email)
+    error=None
+    if(flight_info):
+        return render_template('customer_home.html',name=name, results=flight_info,error=error)
+    else:
+        error='No upcoming flight scheduled in 30 days'
+        return render_template('customer_home.html',name=name, results=flight_info,error=error)
 
 @app.route('/searchFlightsCustomer', methods=['GET', 'POST'])
 def searchFlightsCustomer():
