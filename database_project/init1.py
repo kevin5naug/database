@@ -1096,10 +1096,12 @@ def staff_view_frequent_customers():
     airline_name=session['airline_name']
     cursor=conn.cursor()
     query='''select C.email as email, count(T.ticket_id) as travel_num
-    from customer as C, purchases as P, ticket as T
+    from customer as C, purchases as P, ticket as T, flight as F
     where C.email=P.customer_email
     and P.ticket_id=T.ticket_id
-    and (date(P.purchase_date) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
+    and T.airline_name=F.airline_name
+    and T.flight_num=F.flight_num
+    and (date(F.arrival_time) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
     and T.airline_name=%s
     group by email
     order by travel_num desc
@@ -1126,15 +1128,18 @@ def staff_list_customer_flights():
     and T.airline_name=F.airline_name
     and T.flight_num=F.flight_num
     and F.airline_name=%s
+    and (date(F.arrival_time) <= CURDATE())
     '''
     cursor.execute(query, (email, airline_name))
     flight_info=cursor.fetchall()
     
     query='''select C.email as email, count(T.ticket_id) as travel_num
-    from customer as C, purchases as P, ticket as T
+    from customer as C, purchases as P, ticket as T, flight as F
     where C.email=P.customer_email
     and P.ticket_id=T.ticket_id
-    and (date(P.purchase_date) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
+    and F.airline_name=T.airline_name
+    and F.flight_num=T.flight_num
+    and (date(F.arrival_time) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
     and T.airline_name=%s
     group by email
     order by travel_num desc
@@ -1273,7 +1278,7 @@ def staff_view_top_destinations():
     query='''select A.airport_city as destination, count(T.ticket_id) as visit_num
     from purchases as P, ticket as T, flight as F, airport as A
     where P.ticket_id=T.ticket_id
-    and (date(P.purchase_date) between (CURDATE()-INTERVAL 3 Month) and CURDATE())
+    and (date(F.arrival_time) between (CURDATE()-INTERVAL 3 Month) and CURDATE())
     and T.airline_name=F.airline_name
     and T.airline_name=%s
     and T.flight_num=F.flight_num
@@ -1295,7 +1300,7 @@ def staff_view_top_destinations():
     query='''select A.airport_city as destination, count(T.ticket_id) as visit_num
     from purchases as P, ticket as T, flight as F, airport as A
     where P.ticket_id=T.ticket_id
-    and (date(P.purchase_date) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
+    and (date(F.arrival_time) between (CURDATE()-INTERVAL 1 Year) and CURDATE())
     and T.airline_name=F.airline_name
     and T.airline_name=%s
     and T.flight_num=F.flight_num
